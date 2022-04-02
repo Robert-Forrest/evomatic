@@ -26,8 +26,6 @@ def mutate(compositions):
             if(len(mutation_types) == 0):
                 continue
 
-            mutantIndices.append(composition.name)
-
             mutation_type = np.random.choice(mutation_types, 1)[0]
 
             if mutation_type == 'remove':
@@ -91,8 +89,10 @@ def mutate(compositions):
                  'sigfigs': evo.parameters['sigfigs']
                  })
 
-            mutants.append(
-                {'composition': mg.Alloy(mutant_composition).to_string()})
+            if mutant_composition is not None:
+                mutantIndices.append(composition.name)
+                mutants.append(
+                    {'composition': mg.Alloy(mutant_composition).to_string()})
 
     for i in range(len(mutantIndices)):
         compositions.at[int(mutantIndices[i]),
