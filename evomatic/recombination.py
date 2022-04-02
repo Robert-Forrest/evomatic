@@ -108,8 +108,8 @@ def recombine(compositions):
                      'percentage_step': evo.parameters['percentage_step'],
                      'sigfigs': evo.parameters['sigfigs']
                      })
-
-                children.append(
-                    {'composition': mg.Alloy(child).to_string()})
+                if child is not None:
+                    children.append(
+                        {'composition': mg.Alloy(child).to_string()})
 
     return pd.concat([pd.DataFrame(children), compositions])
