@@ -1,26 +1,30 @@
 import matplotlib.pyplot as plt  # pylint: disable=import-error
 import matplotlib as mpl  # pylint: disable=import-error
 from adjustText import adjust_text
+import metallurgy as mg
+
+import evomatic as evo
+from . import fitness
 
 mpl.use('Agg')
 plt.style.use('ggplot')
 
 
-def plot_targets(history, parameters):
+def plot_targets(history):
 
-    for target in list(parameters['targetNormalisation'].keys())+parameters['extraProperties']:
+    for target in list(evo.parameters['target_normalisation'].keys()):
         for l in ['min', 'average', 'max']:
             plt.plot([i + 1 for i in range(len(history[target]))],
                      [x[l] for x in history[target]], label=l)
 
         plt.xlabel('Generations')
-        label = features.prettyName(target)
-        if target in features.units:
-            label += " ("+features.units[target]+")"
+        label = mg.features.pretty_name(target)
+        if target in mg.features.units:
+            label += " ("+mg.features.units[target]+")"
         plt.ylabel(label)
 
         log_scale = False
-        if target in parameters['targets']['minimisation']:
+        if target in evo.parameters['targets']['minimise']:
             if(history[target][0]['average']/(history[target][-1]['average']+1e-9) > 100):
                 log_scale = True
         else:
@@ -32,7 +36,7 @@ def plot_targets(history, parameters):
 
         plt.grid()
         plt.legend(loc='best')
-        plt.savefig(parameters['output_dir']+target+'.png')
+        plt.savefig(evo.parameters['output_directory']+target+'.png')
         plt.clf()
         plt.cla()
 
@@ -42,12 +46,12 @@ def plot_targets(history, parameters):
         plt.grid()
         plt.yscale('log')
         plt.xlabel(label)
-        plt.savefig(parameters['output_dir']+target+'_hist.png')
+        plt.savefig(evo.parameters['output_directory']+target+'_hist.png')
         plt.clf()
         plt.cla()
 
 
-def plot_composition_percentages(history, parameters):
+def plot_composition_percentages(history):
     compositionHistory = {}
     for i in range(len(history['averageComposition'])):
         for element in history['averageComposition'][i]:
@@ -71,7 +75,8 @@ def plot_composition_percentages(history, parameters):
     plt.legend(loc="upper center", ncol=min(len(compositionHistory), 7),
                handlelength=1, bbox_to_anchor=(0.5, 1.15))
     plt.grid()
-    plt.savefig(parameters['output_dir']+'genetic_compositions_major.png')
+    plt.savefig(evo.parameters['output_directory'] +
+                'genetic_compositions_major.png')
     plt.clf()
     plt.cla()
 
@@ -83,12 +88,12 @@ def plot_composition_percentages(history, parameters):
     plt.legend(loc="upper center", ncol=min(len(compositionHistory), 7),
                handlelength=1, bbox_to_anchor=(0.5, 1.15))
     plt.grid()
-    plt.savefig(parameters['output_dir']+'genetic_compositions.png')
+    plt.savefig(evo.parameters['output_directory']+'genetic_compositions.png')
     plt.clf()
     plt.cla()
 
 
-def pareto_front_plot(history, parameters, pair):
+def pareto_front_plot(history, pair):
 
     max_generation = np.max(history['alloys']['generation'])
 
@@ -122,7 +127,8 @@ def pareto_front_plot(history, parameters, pair):
 
     plt.grid()
     plt.legend(loc="best")
-    imageName = parameters['output_dir']+'pareto_fronts_'+pair[0]+'_'+pair[1]
+    imageName = evo.parameters['output_directory'] + \
+        'pareto_fronts_'+pair[0]+'_'+pair[1]
     plt.tight_layout()
     plt.savefig(imageName+'.png')
     plt.clf()
@@ -130,7 +136,7 @@ def pareto_front_plot(history, parameters, pair):
     plt.close()
 
 
-def pareto_plot(history, parameters, pair, topPercentage=1.0):
+def pareto_plot(history, pair, topPercentage=1.0):
     cm = plt.cm.get_cmap('viridis')
 
     numBest = int(topPercentage*len(history['alloys']))
@@ -141,14 +147,14 @@ def pareto_plot(history, parameters, pair, topPercentage=1.0):
     pareto_filter_input = []
 
     for item in pair:
-        if item in parameters['targets']['minimisation']:
+        if item in evo.parameters['targets']['minimise']:
             scatter_data.append(best_compositions[item]**-1)
             pareto_filter_input.append(
-                normalise(best_compositions[item], item, parameters))
+                fitness.normalise(best_compositions[item], item))
         else:
             scatter_data.append(best_compositions[item])
             pareto_filter_input.append(
-                normalise(best_compositions[item], item, parameters)**-1)
+                fitness.normalise(best_compositions[item], item)**-1)
 
     composition_labels = best_compositions['composition']
 
@@ -195,12 +201,12 @@ def pareto_plot(history, parameters, pair, topPercentage=1.0):
 
                     distance = 0
                     for j in range(2):
-                        candidate = normalise(
-                            pareto_frontier[i][j], pair[j], parameters)
-                        start = normalise(
-                            pareto_frontier[0][j], pair[j], parameters)
-                        end = normalise(
-                            pareto_frontier[labelIndices[1]][j], pair[j], parameters)
+                        candidate = fitness.normalise(
+                            pareto_frontier[i][j], pair[j])
+                        start = fitness.normalise(
+                            pareto_frontier[0][j], pair[j])
+                        end = fitness.normalise(
+                            pareto_frontier[labelIndices[1]][j], pair[j])
                         distance += 0.5 * \
                             np.abs((candidate - start) - (candidate - end))
 
@@ -253,7 +259,7 @@ def pareto_plot(history, parameters, pair, topPercentage=1.0):
 
     labelBoxPosition = (0.99, 0.01)
     labelBoxLoc = 'lower right'
-    if any([t in parameters['targets']['minimisation'] for t in pair]):
+    if any([t in evo.parameters['targets']['minimise'] for t in pair]):
         labelBoxPosition = (0.99, 0.99)
         labelBoxLoc = 'upper right'
 
@@ -284,14 +290,14 @@ def pareto_plot(history, parameters, pair, topPercentage=1.0):
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
     for i in range(len(pair)):
-        label = features.prettyName(pair[i])
-        if pair[i] not in parameters['targets']['maximisation']:
-            label = features.prettyName(pair[i])+r'$^{-1}$'
-            if pair[i] in features.inverse_units:
-                label += " ("+features.inverse_units[pair[i]]+")"
+        label = mg.features.pretty_name(pair[i])
+        if pair[i] not in evo.parameters['targets']['maximise']:
+            label = mg.features.pretty_name(pair[i])+r'$^{-1}$'
+            if pair[i] in mg.features.inverse_units:
+                label += " ("+mg.features.inverse_units[pair[i]]+")"
         else:
-            if pair[i] in features.units:
-                label += " ("+features.units[pair[i]]+")"
+            if pair[i] in mg.features.units:
+                label += " ("+mg.features.units[pair[i]]+")"
 
         if i == 0:
             plt.xlabel(label)
@@ -301,7 +307,8 @@ def pareto_plot(history, parameters, pair, topPercentage=1.0):
     plt.grid()
     cbar = plt.colorbar()
     cbar.set_label('Generation')
-    imageName = parameters['output_dir']+'pareto_'+pair[0]+'_'+pair[1]
+    imageName = evo.parameters['output_directory'] + \
+        'pareto_'+pair[0]+'_'+pair[1]
     if topPercentage != 1.0:
         imageName += "_top"+str(topPercentage)
     fig.tight_layout()

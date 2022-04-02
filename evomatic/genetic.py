@@ -109,10 +109,8 @@ def accumulate_history(compositions, history):
 
 
 def output_progress(history, compositions):
-    # statString = "Fitness: " + str(round(history['fitness'][-1]['min'], 4)) + ":" + str(round(
-    #     history['fitness'][-1]['average'], 4))+":" + str(round(history['fitness'][-1]['max'], 4))+", "
-    statString = ""
 
+    statString = ""
     for target in evo.parameters['targets']['minimise']+evo.parameters['targets']['maximise']:
         statString += target+": " + \
             str(round(history[target][-1]['min'], 4)) + ":" + \
@@ -196,14 +194,8 @@ def evolve():
                     subset='composition')
 
         iteration += 1
-    return history
 
-
-def run():
-
-    history = evolve()
-
-    if plot:
+    if evo.parameters['plot']:
         output_results(history)
 
     return history

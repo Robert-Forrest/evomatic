@@ -1,16 +1,22 @@
-def writeOutputFile(alloys, averageCompositionHistory, parameters):
-    with open(parameters['output_dir']+'genetic.dat', 'w') as geneticFile:
+import metallurgy as mg
+
+import evomatic as evo
+
+
+def writeOutputFile(alloys, averageCompositionHistory):
+
+    with open(evo.parameters['output_directory']+'genetic.dat', 'w') as geneticFile:
         geneticFile.write("# rank generation composition fitness " +
-                          " ".join(parameters['targets']['minimisation']+parameters['targets']['maximisation'])+"\n")
+                          " ".join(evo.parameters['targets']['minimise']+evo.parameters['targets']['maximise'])+"\n")
 
         i = 0
         for _, row in alloys.iterrows():
             statString = str(round(row['fitness'], 4))+" "
-            for target in parameters['targets']['minimisation']+parameters['targets']['maximisation']:
+            for target in evo.parameters['targets']['minimise']+evo.parameters['targets']['maximise']:
                 statString += str(round(row[target], 4))+" "
 
-            geneticFile.write(str(i) + " " + str(row['generation'])+" " + features.composition_to_string(
-                row['composition']) + " " + statString + "\n")
+            geneticFile.write(str(i) + " " + str(row['generation'])+" " + mg.Alloy(
+                row['composition']).to_string() + " " + statString + "\n")
             i += 1
 
     elements = []
@@ -19,21 +25,21 @@ def writeOutputFile(alloys, averageCompositionHistory, parameters):
             if element not in elements:
                 elements.append(element)
 
-    with open(parameters['output_dir']+'genetic_extended.dat', 'w') as geneticFile:
+    with open(evo.parameters['output_directory']+'genetic_extended.dat', 'w') as geneticFile:
         geneticFile.write("# rank generation "+" ".join(elements)+" fitness " +
-                          " ".join(parameters['targets']['minimisation']+parameters['targets']['maximisation'])+"\n")
+                          " ".join(evo.parameters['targets']['minimise']+evo.parameters['targets']['maximise'])+"\n")
 
         i = 0
         for _, row in alloys.iterrows():
             statString = str(round(row['fitness'], 4))+" "
-            for target in parameters['targets']['minimisation']+parameters['targets']['maximisation']:
+            for target in evo.parameters['targets']['minimise']+evo.parameters['targets']['maximise']:
                 statString += str(round(row[target], 4))+" "
 
             percentageStr = ""
-            composition = features.parse_composition(row['composition'])
+            alloy = mg.Alloy(row['composition'])
             for element in elements:
-                if element in composition:
-                    percentageStr += str(composition[element])
+                if element in alloy.composition:
+                    percentageStr += str(alloy.composition[element])
                 else:
                     percentageStr += "0"
                 percentageStr += " "

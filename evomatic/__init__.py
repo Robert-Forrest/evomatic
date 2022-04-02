@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import elementy
 
-from . import genetic
+from .genetic import evolve
 
 parameters = None
 
@@ -105,6 +105,11 @@ def setup(in_parameters):
 
     if 'percentage_step' not in parameters:
         parameters['percentage_step'] = percentage_step = 0.01
+
+    if 'plot' not in parameters:
+        parameters['plot'] = False
+    else:
+        parameters['output_directory'] = './'
 
     parameters['sigfigs'] = -int(f'{percentage_step:e}'.split('e')[-1])
 
