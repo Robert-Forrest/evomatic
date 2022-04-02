@@ -1,6 +1,9 @@
+import string
+import re
+
+import numpy as np
 import matplotlib.pyplot as plt  # pylint: disable=import-error
 import matplotlib as mpl  # pylint: disable=import-error
-from adjustText import adjust_text
 import metallurgy as mg
 
 import evomatic as evo
@@ -158,7 +161,7 @@ def pareto_plot(history, pair, topPercentage=1.0):
 
     composition_labels = best_compositions['composition']
 
-    pareto_filter = is_pareto_efficient(pareto_filter_input)
+    pareto_filter = fitness.is_pareto_efficient(pareto_filter_input)
     pareto_frontier = [[], [], []]
     for i in range(len(scatter_data[0])):
         if pareto_filter[i]:
@@ -232,8 +235,8 @@ def pareto_plot(history, pair, topPercentage=1.0):
     i = 0
     for index in labelIndices:
 
-        descriptionStr += alphabetLabels[i]+": " + features.prettyComposition(
-            pareto_frontier[index][2]) + "\n"
+        descriptionStr += alphabetLabels[i]+": " + mg.Alloy(
+            pareto_frontier[index][2]).to_pretty_string() + "\n"
 
         annotations.append(plt.text(pareto_frontier[index][0], pareto_frontier[index][1],
                                     alphabetLabels[i],
