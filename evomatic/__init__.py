@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import elementy
+import metallurgy as mg
 
 from .genetic import evolve
 
@@ -34,53 +34,55 @@ def setup(in_parameters):
 
     if 'constraints' in parameters:
 
-        required_elements = parameters['constraints']['elements']
-        max_elements = parameters['constraints']['max_elements']
-        if 'min_elements' in parameters['constraints']:
-            min_elements = parameters['constraints']['min_elements']
+        if 'max_elements' not in parameters['constraints']:
+            parameters['constraints']['max_elements'] = 8
+
+        if 'min_elements' not in parameters['constraints']:
+            parameters['constraints']['min_elements'] = 1
+
+        allow_other_elements = True
+        parameters['constraints']['allowed_elements'] = [
+            e.symbol for e in mg.periodic_table.elements]
+
+        if 'elements' in parameters['constraints']:
+            allow_other_elements = False
+            if (len(parameters['constraints']['elements']) < 2
+                    or len(parameters['constraints']['elements']) < parameters['constraints']['max_elements']):
+                allow_other_elements = True
+
+            parameters['constraints']['allowed_elements'] = list(
+                parameters['constraints']['elements'].keys())
         else:
-            min_elements = 1
+            parameters['constraints']['elements'] = {}
 
-        disallowed_elements = parameters['constraints']['disallowed_elements']
-        disallowed_properties = parameters['constraints']['disallowed_properties']
-
-        allow_other_elements = False
-        if len(required_elements) < 2:
-            allow_other_elements = True
-        elif len(required_elements) < max_elements:
-            allow_other_elements = True
-
-        allowed_elements = list(required_elements.keys())
         if allow_other_elements:
-            allowed_elements = [e.symbol for e in elementy.elements.ELEMENTS]
-            if len(disallowed_properties) > 0:
-                elementData = features.getElementData()
-                for element in allowed_elements:
-                    if element not in disallowed_elements:
-                        for item in disallowed_properties:
-                            if item['property'] in elementData[element]:
-                                if elementData[element][item['property']] == item['value']:
-                                    disallowed_elements.append(element)
+            if 'disallowed_properties' in parameters['constraints']:
+                if len(parameters['constraints']['disallowed_properties']) > 0:
+                    for element in parameters['allowed_elements']:
+                        if element not in parameters['constraints']['disallowed_elements']:
+                            for item in parameters['constraints']['disallowed_properties']:
+                                if item['property'] in mg.periodic_table.data[element]:
+                                    if mg.periodic_table.data[element][item['property']] == item['value']:
+                                        parameters['constraints']['disallowed_elements'].append(
+                                            element)
 
-            if len(disallowed_elements) > 0:
-                for element in disallowed_elements:
-                    if element in allowed_elements:
-                        allowed_elements.remove(element)
-
-        parameters['allowed_elements'] = allowed_elements
-
-        parameters['requirements'] = parse_required_elements(required_elements)
-
-        if not allow_other_elements:
-            if max_elements > len(required_elements):
-                max_elements = len(required_elements)
+            if 'disallowed_elements' in parameters['constraints']:
+                if len(parameters['constraints']['disallowed_elements']) > 0:
+                    for element in parameters['constraints']['disallowed_elements']:
+                        if element in parameters['constraints']['allowed_elements']:
+                            parameters['constraints']['allowed_elements'].remove(
+                                element)
+        else:
+            if parameters['constraints']['max_elements'] > len(parameters['constraints']['elements']):
+                parameters['constraints']['max_elements'] = len(
+                    parameters['constraints']['elements'])
 
     else:
         parameters['constraints'] = {}
         parameters['constraints']['min_elements'] = 1
         parameters['constraints']['max_elements'] = 8
         parameters['constraints']['allowed_elements'] = [
-            e.symbol for e in elementy.elements.ELEMENTS]
+            e.symbol for e in mg.periodic_table.elements]
         parameters['constraints']['elements'] = {}
 
     if 'max_iterations' not in parameters:
@@ -108,8 +110,11 @@ def setup(in_parameters):
 
     if 'plot' not in parameters:
         parameters['plot'] = False
-    else:
+
+    if 'output_directory' not in parameters:
         parameters['output_directory'] = './'
+    if parameters['output_directory'][-1] != '/':
+        parameters['output_directory'] += '/'
 
     parameters['sigfigs'] = -int(f'{percentage_step:e}'.split('e')[-1])
 
