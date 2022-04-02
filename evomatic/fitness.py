@@ -65,55 +65,16 @@ def calculate_crowding(compositions):
 
     distance = [0] * len(compositions)
 
-    delta = []
-    m = 0
     for target in evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise']:
         tmpCompositions = tmpCompositions.sort_values(by=[target])
-
-        if(len(tmpCompositions) > 1):
-            delta.append([0]*(len(compositions)-1))
-            delta[m][0] = tmpCompositions.iloc[1][target] - \
-                tmpCompositions.iloc[0][target]
-        else:
-            delta.append([0])
 
         for i in range(1, len(compositions)-1):
             distance[i] += (tmpCompositions.iloc[i+1][target] -
                             tmpCompositions.iloc[i-1][target])
-            delta[m][i] = (tmpCompositions.iloc[i+1][target] -
-                           tmpCompositions.iloc[i][target])
 
         distance[0] = distance[-1] = np.Inf
-        m += 1
 
     compositions['crowding'] = distance
-
-    gamma = np.max(delta)
-
-    deviations = []
-    m = 0
-    for target in evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise']:
-        meanDelta = np.mean(delta[m])
-
-        if meanDelta > 0:
-            deviation = 0
-            for i in range(len(compositions)-1):
-                deviation += np.abs(delta[m][i]-meanDelta)
-
-            delta0 = delta[m][0]
-            deltaN = delta[m][len(delta[m])-1]
-            deviations.append(
-                (delta0 + deltaN + deviation) / (delta0+deltaN +
-                                                 (len(evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise'])-1)*meanDelta)
-            )
-        else:
-            deviations.append(0)
-        m += 1
-
-    Delta = np.max(deviations)
-
-    compositions['diversityDelta'] = Delta
-    compositions['diversityGamma'] = gamma
 
 
 def get_pareto_frontier(compositions):
