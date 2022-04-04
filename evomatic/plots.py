@@ -53,44 +53,47 @@ def plot_targets(history):
         plt.cla()
 
 
-def plot_composition_percentages(history):
-    compositionHistory = {}
-    for i in range(len(history['averageComposition'])):
-        for element in history['averageComposition'][i]:
-            if element not in compositionHistory:
-                compositionHistory[element] = []
+def plot_alloy_percentages(history):
+    alloy_history = {}
+    for i in range(len(history['average_alloy'])):
+        for element in history['average_alloy'][i]:
+            if element not in alloy_history:
+                alloy_history[element] = []
 
-    for i in range(len(history['averageComposition'])):
-        for element in compositionHistory:
-            if element in history['averageComposition'][i]:
-                compositionHistory[element].append(
-                    history['averageComposition'][i][element]*100)
+    for i in range(len(history['average_alloy'])):
+        for element in alloy_history:
+            if element in history['average_alloy'][i]:
+                alloy_history[element].append(
+                    history['average_alloy'][i][element]*100)
             else:
-                compositionHistory[element].append(0.0)
+                alloy_history[element].append(0.0)
 
-    for element in compositionHistory:
-        if(max(compositionHistory[element]) > 10):
-            plt.plot(compositionHistory[element], label=element)
+    any_above_10 = False
+    for element in alloy_history:
+        if(max(alloy_history[element]) > 10):
+            any_above_10 = True
+            plt.plot(alloy_history[element], label=element)
+
+    if any_above_10:
+        plt.xlabel('Generations')
+        plt.ylabel('Average alloy %')
+        plt.legend(loc="upper center", ncol=min(len(alloy_history), 7),
+                   handlelength=1, bbox_to_anchor=(0.5, 1.15))
+        plt.grid()
+        plt.savefig(evo.parameters['output_directory'] +
+                    'genetic_alloys_major.png')
+        plt.clf()
+        plt.cla()
+
+    for element in alloy_history:
+        plt.plot(alloy_history[element], label=element)
 
     plt.xlabel('Generations')
-    plt.ylabel('Average composition %')
-    plt.legend(loc="upper center", ncol=min(len(compositionHistory), 7),
+    plt.ylabel('Average alloy %')
+    plt.legend(loc="upper center", ncol=min(len(alloy_history), 7),
                handlelength=1, bbox_to_anchor=(0.5, 1.15))
     plt.grid()
-    plt.savefig(evo.parameters['output_directory'] +
-                'genetic_compositions_major.png')
-    plt.clf()
-    plt.cla()
-
-    for element in compositionHistory:
-        plt.plot(compositionHistory[element], label=element)
-
-    plt.xlabel('Generations')
-    plt.ylabel('Average composition %')
-    plt.legend(loc="upper center", ncol=min(len(compositionHistory), 7),
-               handlelength=1, bbox_to_anchor=(0.5, 1.15))
-    plt.grid()
-    plt.savefig(evo.parameters['output_directory']+'genetic_compositions.png')
+    plt.savefig(evo.parameters['output_directory']+'genetic_alloys.png')
     plt.clf()
     plt.cla()
 
@@ -143,22 +146,22 @@ def pareto_plot(history, pair, topPercentage=1.0):
 
     numBest = int(topPercentage*len(history['alloys']))
 
-    best_compositions = history['alloys'].head(numBest)
+    best_alloys = history['alloys'].head(numBest)
 
     scatter_data = []
     pareto_filter_input = []
 
     for item in pair:
         if item in evo.parameters['targets']['minimise']:
-            scatter_data.append(best_compositions[item]**-1)
+            scatter_data.append(best_alloys[item]**-1)
             pareto_filter_input.append(
-                fitness.normalise(best_compositions[item], item))
+                fitness.normalise(best_alloys[item], item))
         else:
-            scatter_data.append(best_compositions[item])
+            scatter_data.append(best_alloys[item])
             pareto_filter_input.append(
-                fitness.normalise(best_compositions[item], item)**-1)
+                fitness.normalise(best_alloys[item], item)**-1)
 
-    composition_labels = best_compositions['composition']
+    alloy_labels = best_alloys['alloy']
 
     pareto_filter = fitness.is_pareto_efficient(pareto_filter_input)
     pareto_frontier = [[], [], []]
@@ -166,7 +169,7 @@ def pareto_plot(history, pair, topPercentage=1.0):
         if pareto_filter[i]:
             pareto_frontier[0].append(scatter_data[0].iloc[i])
             pareto_frontier[1].append(scatter_data[1].iloc[i])
-            pareto_frontier[2].append(composition_labels.iloc[i])
+            pareto_frontier[2].append(alloy_labels.iloc[i])
 
     pareto_frontier = sorted(
         zip(pareto_frontier[0], pareto_frontier[1], pareto_frontier[2]))[::-1]
@@ -243,7 +246,7 @@ def pareto_plot(history, pair, topPercentage=1.0):
         i += 1
     descriptionStr = descriptionStr[:-1]
 
-    generations = best_compositions['generation']
+    generations = best_alloys['generation']
     generation_order = np.argsort(generations)
 
     frontier_line = plt.plot([x[0] for x in pareto_frontier],

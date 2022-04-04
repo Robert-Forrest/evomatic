@@ -123,7 +123,7 @@ def setup_history():
     global parameters
 
     history = {
-        'averageComposition': [],
+        'average_alloy': [],
         'alloys': pd.DataFrame({})
     }
     for target in parameters['targets']['minimise'] +\

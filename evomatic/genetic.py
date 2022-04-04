@@ -6,6 +6,7 @@ import copy
 import pandas as pd
 import numpy as np
 import metallurgy as mg
+import cerebral as cb
 
 import evomatic as evo
 from . import io
@@ -69,10 +70,10 @@ def output_results(history):
         'fitness', ascending=False)
 
     io.writeOutputFile(history['alloys'],
-                       history['averageComposition'])
+                       history['average_alloy'])
 
     plots.plot_targets(history)
-    plots.plot_composition_percentages(history)
+    plots.plot_alloy_percentages(history)
 
     for pair in itertools.combinations(evo.parameters['targets']['minimise']+evo.parameters['targets']['maximise'], 2):
         plots.pareto_front_plot(history, pair)
@@ -103,7 +104,7 @@ def accumulate_history(alloys, history):
             totalComposition[element] += alloy.composition[element]
     for element in totalComposition:
         totalComposition[element] /= len(alloys)
-    history['averageComposition'].append(totalComposition)
+    history['average_alloy'].append(totalComposition)
 
     return history
 
@@ -150,13 +151,25 @@ def evolve():
 
     history = evo.setup_history()
 
+    model = None
+    if evo.parameters['model']:
+        model = cb.models.load(evo.parameters['model'])
+
     iteration = 0
     converged = False
     while (iteration < evo.parameters['max_iterations'] and not converged) or iteration < evo.parameters['min_iterations']:
 
         for target in evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise']:
-            alloys[target] = mg.calculate(
-                alloys['composition'], target)
+            model_prediction = False
+            if model is not None:
+                if target in [t['name'] for t in cb.models.get_model_prediction_features(model)]:
+                    model_prediction = True
+                    alloys[target] = cb.models.predict(
+                        model, alloys['composition'])[target]
+
+            if not model_prediction:
+                alloys[target] = mg.calculate(
+                    alloys['composition'], target)
 
         alloys = alloys.dropna(
             subset=evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise'])
