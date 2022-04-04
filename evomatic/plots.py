@@ -43,7 +43,6 @@ def plot_targets(history):
         plt.clf()
         plt.cla()
 
-        print(history['alloys'][target].describe())
         plt.hist(history['alloys'][target])
         plt.ylabel("Count")
         plt.grid()
