@@ -17,7 +17,7 @@ from . import mutate
 
 
 def immigrate(numImmigrants):
-    new_compositions = []
+    new_alloys = []
     for _ in range(numImmigrants):
         immigrant = mg.generate.random_alloy(
             min_elements=evo.parameters['constraints']['min_elements'],
@@ -26,10 +26,10 @@ def immigrate(numImmigrants):
             allowed_elements=evo.parameters['constraints']['allowed_elements']
         )
 
-        new_compositions.append(
+        new_alloys.append(
             {'composition': immigrant.to_string()})
 
-    return pd.DataFrame(new_compositions)
+    return pd.DataFrame(new_alloys)
 
 
 def check_converged(history):
@@ -81,34 +81,34 @@ def output_results(history):
                               topPercentage=round((i+1)/10, 1))
 
 
-def accumulate_history(compositions, history):
+def accumulate_history(alloys, history):
     for target in evo.parameters['targets']['minimise']+evo.parameters['targets']['maximise']:
         history[target].append({
-            'average': np.average(compositions[target]),
-            'max': np.max(compositions[target]),
-            'min': np.min(compositions[target])
+            'average': np.average(alloys[target]),
+            'max': np.max(alloys[target]),
+            'min': np.min(alloys[target])
         })
 
     history['alloys'] = pd.concat(
-        [history['alloys'], compositions],
+        [history['alloys'], alloys],
         ignore_index=True)
     history['alloys'] = history['alloys'].drop_duplicates(subset='composition')
 
     totalComposition = {}
-    for _, row in compositions.iterrows():
+    for _, row in alloys.iterrows():
         alloy = mg.Alloy(row['composition'])
         for element in alloy.composition:
             if element not in totalComposition:
                 totalComposition[element] = 0
             totalComposition[element] += alloy.composition[element]
     for element in totalComposition:
-        totalComposition[element] /= len(compositions)
+        totalComposition[element] /= len(alloys)
     history['averageComposition'].append(totalComposition)
 
     return history
 
 
-def output_progress(history, compositions):
+def output_progress(history, alloys):
 
     statString = ""
     for target in evo.parameters['targets']['minimise']+evo.parameters['targets']['maximise']:
@@ -119,13 +119,13 @@ def output_progress(history, compositions):
     statString = statString[:-2]
 
     print("Generation " + str(len(history[target])) + ", population:" +
-          str(len(compositions)) + ", "+statString)
+          str(len(alloys)) + ", "+statString)
 
 
-def make_new_generation(compositions):
-    compositions = compositions.copy()
+def make_new_generation(alloys):
+    alloys = alloys.copy()
 
-    parents = tournaments.hold_tournaments(compositions)
+    parents = tournaments.hold_tournaments(alloys)
 
     children = recombination.recombine(parents)
 
@@ -146,7 +146,7 @@ def make_new_generation(compositions):
 
 def evolve():
 
-    compositions = immigrate(evo.parameters['population_size'])
+    alloys = immigrate(evo.parameters['population_size'])
 
     history = evo.setup_history()
 
@@ -155,16 +155,19 @@ def evolve():
     while (iteration < evo.parameters['max_iterations'] and not converged) or iteration < evo.parameters['min_iterations']:
 
         for target in evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise']:
-            compositions[target] = mg.calculate(
-                compositions['composition'], target)
+            alloys[target] = mg.calculate(
+                alloys['composition'], target)
 
-        compositions['generation'] = iteration
+        alloys = alloys.dropna(
+            subset=evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise'])
 
-        compositions = fitness.calculate_fitnesses(compositions)
+        alloys['generation'] = iteration
 
-        history = accumulate_history(compositions, history)
+        alloys = fitness.calculate_fitnesses(alloys)
 
-        output_progress(history, compositions)
+        history = accumulate_history(alloys, history)
+
+        output_progress(history, alloys)
 
         if iteration > evo.parameters['convergence_window'] and iteration > evo.parameters['min_iterations']:
             converged = check_converged(history)
@@ -173,24 +176,24 @@ def evolve():
 
         if iteration < evo.parameters['max_iterations'] - 1:
 
-            compositions = compositions.sort_values(
+            alloys = alloys.sort_values(
                 by=['rank', 'crowding'],
                 ascending=[True, False]
             ).head(evo.parameters['population_size'])
 
-            children = make_new_generation(compositions)
+            children = make_new_generation(alloys)
 
-            compositions = pd.concat(
-                [compositions, children],
+            alloys = pd.concat(
+                [alloys, children],
                 ignore_index=True)
-            compositions = compositions.drop_duplicates(subset='composition')
+            alloys = alloys.drop_duplicates(subset='composition')
 
-            while(len(compositions) < 2*evo.parameters['population_size']):
+            while(len(alloys) < 2*evo.parameters['population_size']):
                 immigrants = immigrate(
-                    2*evo.parameters['population_size']-len(compositions))
-                compositions = pd.concat(
-                    [compositions, immigrants], ignore_index=True)
-                compositions = compositions.drop_duplicates(
+                    2*evo.parameters['population_size']-len(alloys))
+                alloys = pd.concat(
+                    [alloys, immigrants], ignore_index=True)
+                alloys = alloys.drop_duplicates(
                     subset='composition')
 
         iteration += 1
