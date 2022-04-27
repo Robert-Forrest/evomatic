@@ -5,24 +5,24 @@ import evomatic as evo
 from . import fitness
 
 
-def hold_tournaments(compositions):
+def hold_tournaments(alloys):
 
-    tmp_compositions = compositions.copy()
-    tmp_compositions = tmp_compositions.sort_values('rank')
+    tmp_alloys = alloys.copy()
+    tmp_alloys = tmp_alloys.sort_values('rank')
 
     winners = []
-    num_winners = int(np.floor(len(tmp_compositions) *
+    num_winners = int(np.floor(len(tmp_alloys) *
                                evo.parameters['selection_percentage']))
     while len(winners) < num_winners:
-        if(len(tmp_compositions) >= evo.parameters['tournament_size']):
+        if(len(tmp_alloys) >= evo.parameters['tournament_size']):
 
-            contestants = tmp_compositions.sample(
+            contestants = tmp_alloys.sample(
                 n=evo.parameters['tournament_size'], replace=False)
 
             winner = fitness.compare_candidates(
                 contestants.iloc[0], contestants.iloc[1])
             winners.append(winner)
-            tmp_compositions.drop([winner.name])
+            tmp_alloys.drop([winner.name])
 
         else:
             break

@@ -13,17 +13,17 @@ def normalise(data, feature):
         return 0
 
 
-def calculate_comparible_fitnesses(compositions):
+def calculate_comparible_fitnesses(alloys):
     for target in evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise']:
-        for _, row in compositions.iterrows():
+        for _, row in alloys.iterrows():
             if row[target] > evo.parameters['target_normalisation'][target]['max']:
                 evo.parameters['target_normalisation'][target]['max'] = row[target]
 
             if row[target] < evo.parameters['target_normalisation'][target]['min']:
                 evo.parameters['target_normalisation'][target]['min'] = row[target]
 
-    for i, row in compositions.iterrows():
-        compositions.at[i, 'fitness'] = calculate_comparible_fitness(row)
+    for i, row in alloys.iterrows():
+        alloys.at[i, 'fitness'] = calculate_comparible_fitness(row)
 
 
 def calculate_comparible_fitness(data):
@@ -52,42 +52,42 @@ def calculate_comparible_fitness(data):
     return fitness
 
 
-def calculate_crowding(compositions):
-    tmpCompositions = compositions.copy()
+def calculate_crowding(alloys):
+    tmpAlloys = alloys.copy()
 
-    for i, row in tmpCompositions.iterrows():
+    for i, row in tmpAlloys.iterrows():
         for target in evo.parameters['targets']['minimise']:
-            tmpCompositions.at[i, target] = normalise(
+            tmpAlloys.at[i, target] = normalise(
                 row[target], target)
         for target in evo.parameters['targets']['maximise']:
-            tmpCompositions.at[i, target] = normalise(
+            tmpAlloys.at[i, target] = normalise(
                 row[target], target)
 
-    distance = [0] * len(compositions)
+    distance = [0] * len(alloys)
 
     for target in evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise']:
-        tmpCompositions = tmpCompositions.sort_values(by=[target])
+        tmpAlloys = tmpAlloys.sort_values(by=[target])
 
-        for i in range(1, len(compositions)-1):
-            distance[i] += (tmpCompositions.iloc[i+1][target] -
-                            tmpCompositions.iloc[i-1][target])
+        for i in range(1, len(alloys)-1):
+            distance[i] += (tmpAlloys.iloc[i+1][target] -
+                            tmpAlloys.iloc[i-1][target])
 
         distance[0] = distance[-1] = np.Inf
 
-    compositions['crowding'] = distance
+    alloys['crowding'] = distance
 
 
-def get_pareto_frontier(compositions):
+def get_pareto_frontier(alloys):
     costs = []
     for target in evo.parameters['targets']['minimise']:
         cost = []
-        for _, row in compositions.iterrows():
+        for _, row in alloys.iterrows():
             cost.append(normalise(row[target], target))
         costs.append(cost)
 
     for target in evo.parameters['targets']['maximise']:
         cost = []
-        for _, row in compositions.iterrows():
+        for _, row in alloys.iterrows():
             normalised = normalise(row[target], target)
             if normalised != 0.0:
                 cost.append(normalised**-1)
@@ -100,9 +100,9 @@ def get_pareto_frontier(compositions):
     return pareto_filter
 
 
-def calculate_fitnesses(compositions):
+def calculate_fitnesses(alloys):
     for target in evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise']:
-        for _, row in compositions.iterrows():
+        for _, row in alloys.iterrows():
             if row[target] > evo.parameters['target_normalisation'][target]['max']:
                 evo.parameters['target_normalisation'][target]['max'] = row[target]
                 if target in evo.parameters['targets']['maximise']:
@@ -115,13 +115,13 @@ def calculate_fitnesses(compositions):
 
     evo.parameters['timeSinceImprovement'] += 1
 
-    tmpCompositions = compositions.copy()
+    tmpAlloys = alloys.copy()
 
     fronts = []
-    while len(tmpCompositions) > 0:
-        pareto_filter = get_pareto_frontier(tmpCompositions)
-        front = tmpCompositions.loc[pareto_filter]
-        tmpCompositions = tmpCompositions.drop(front.index)
+    while len(tmpAlloys) > 0:
+        pareto_filter = get_pareto_frontier(tmpAlloys)
+        front = tmpAlloys.loc[pareto_filter]
+        tmpAlloys = tmpAlloys.drop(front.index)
 
         front['rank'] = len(fronts)
 
@@ -129,8 +129,8 @@ def calculate_fitnesses(compositions):
 
         fronts.append(front)
 
-    compositions = pd.concat(fronts)
-    return compositions
+    alloys = pd.concat(fronts)
+    return alloys
 
 
 def is_pareto_efficient(costs, return_mask=True):

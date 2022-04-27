@@ -23,12 +23,12 @@ def immigrate(numImmigrants):
         immigrant = mg.generate.random_alloy(
             min_elements=evo.parameters['constraints']['min_elements'],
             max_elements=evo.parameters['constraints']['max_elements'],
-            required_elements=evo.parameters['constraints']['elements'],
+            percentage_constraints=evo.parameters['constraints']['percentages'],
             allowed_elements=evo.parameters['constraints']['allowed_elements']
         )
 
         new_alloys.append(
-            {'composition': immigrant.to_string()})
+            {'alloy': immigrant})
 
     return pd.DataFrame(new_alloys)
 
@@ -93,11 +93,11 @@ def accumulate_history(alloys, history):
     history['alloys'] = pd.concat(
         [history['alloys'], alloys],
         ignore_index=True)
-    history['alloys'] = history['alloys'].drop_duplicates(subset='composition')
+    history['alloys'] = history['alloys'].drop_duplicates(subset='alloy')
 
     totalComposition = {}
     for _, row in alloys.iterrows():
-        alloy = mg.Alloy(row['composition'])
+        alloy = mg.Alloy(row['alloy'])
         for element in alloy.composition:
             if element not in totalComposition:
                 totalComposition[element] = 0
@@ -132,7 +132,7 @@ def make_new_generation(alloys):
 
     children = mutate.mutate(children)
 
-    new_generation = children.drop_duplicates(subset='composition')
+    new_generation = children.drop_duplicates(subset='alloy')
 
     while(len(new_generation) < evo.parameters['population_size']):
         immigrants = immigrate(
@@ -140,7 +140,7 @@ def make_new_generation(alloys):
         new_generation = pd.concat(
             [new_generation, immigrants], ignore_index=True)
         new_generation = new_generation.drop_duplicates(
-            subset='composition')
+            subset='alloy')
 
     return new_generation
 
@@ -154,22 +154,14 @@ def evolve():
     model = None
     if evo.parameters['model']:
         model = cb.models.load(evo.parameters['model'])
-
+        mg.set_model(model)
+        
     iteration = 0
     converged = False
     while (iteration < evo.parameters['max_iterations'] and not converged) or iteration < evo.parameters['min_iterations']:
 
-        for target in evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise']:
-            model_prediction = False
-            if model is not None:
-                if target in [t['name'] for t in cb.models.get_model_prediction_features(model)]:
-                    model_prediction = True
-                    alloys[target] = cb.models.predict(
-                        model, alloys['composition'])[target]
-
-            if not model_prediction:
-                alloys[target] = mg.calculate(
-                    alloys['composition'], target)
+        for target in evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise']:            
+            alloys[target] = mg.calculate(alloys['alloy'], target)
 
         alloys = alloys.dropna(
             subset=evo.parameters['targets']['maximise']+evo.parameters['targets']['minimise'])
@@ -199,7 +191,7 @@ def evolve():
             alloys = pd.concat(
                 [alloys, children],
                 ignore_index=True)
-            alloys = alloys.drop_duplicates(subset='composition')
+            alloys = alloys.drop_duplicates(subset='alloy')
 
             while(len(alloys) < 2*evo.parameters['population_size']):
                 immigrants = immigrate(
@@ -207,7 +199,7 @@ def evolve():
                 alloys = pd.concat(
                     [alloys, immigrants], ignore_index=True)
                 alloys = alloys.drop_duplicates(
-                    subset='composition')
+                    subset='alloy')
 
         iteration += 1
 

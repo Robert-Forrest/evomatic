@@ -42,18 +42,18 @@ def setup(in_parameters):
 
         allow_other_elements = True
         parameters['constraints']['allowed_elements'] = [
-            e.symbol for e in mg.periodic_table.elements]
+            e for e in mg.periodic_table.elements]
 
-        if 'elements' in parameters['constraints']:
+        if 'percentages' in parameters['constraints']:
             allow_other_elements = False
-            if (len(parameters['constraints']['elements']) < 2
-                    or len(parameters['constraints']['elements']) < parameters['constraints']['max_elements']):
+            if (len(parameters['constraints']['percentages']) < 2
+                    or len(parameters['constraints']['percentages']) < parameters['constraints']['max_elements']):
                 allow_other_elements = True
 
             parameters['constraints']['allowed_elements'] = list(
-                parameters['constraints']['elements'].keys())
+                parameters['constraints']['percentages'].keys())
         else:
-            parameters['constraints']['elements'] = {}
+            parameters['constraints']['percentages'] = {}
 
         if allow_other_elements:
             if 'disallowed_properties' in parameters['constraints']:
@@ -73,17 +73,17 @@ def setup(in_parameters):
                             parameters['constraints']['allowed_elements'].remove(
                                 element)
         else:
-            if parameters['constraints']['max_elements'] > len(parameters['constraints']['elements']):
+            if parameters['constraints']['max_elements'] > len(parameters['constraints']['percentages']):
                 parameters['constraints']['max_elements'] = len(
-                    parameters['constraints']['elements'])
+                    parameters['constraints']['percentages'])
 
     else:
         parameters['constraints'] = {}
         parameters['constraints']['min_elements'] = 1
         parameters['constraints']['max_elements'] = 8
         parameters['constraints']['allowed_elements'] = [
-            e.symbol for e in mg.periodic_table.elements]
-        parameters['constraints']['elements'] = {}
+            e for e in mg.periodic_table.elements]
+        parameters['constraints']['percentages'] = {}
 
     if 'max_iterations' not in parameters:
         parameters['max_iterations'] = 100
