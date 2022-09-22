@@ -49,10 +49,10 @@ def setup(in_parameters):
         if "min_elements" not in parameters["constraints"]:
             parameters["constraints"]["min_elements"] = 1
 
-        allow_other_elements = True
-        parameters["constraints"]["allowed_elements"] = [
-            e for e in mg.periodic_table.elements
-        ]
+        if "allowed_elements" not in parameters["constraints"]:
+            parameters["constraints"]["allowed_elements"] = [
+                e for e in mg.periodic_table.elements
+            ]
 
         if "percentages" in parameters["constraints"]:
             allow_other_elements = False
@@ -64,6 +64,7 @@ def setup(in_parameters):
                 allow_other_elements = True
 
         else:
+            allow_other_elements = True
             parameters["constraints"]["percentages"] = {}
 
         if allow_other_elements:
