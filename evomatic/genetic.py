@@ -124,6 +124,7 @@ def accumulate_history(alloys, history):
     history["alloys"] = pd.concat(
         [history["alloys"], alloys], ignore_index=True
     )
+
     history["alloys"] = history["alloys"].drop_duplicates(subset="alloy")
 
     totalComposition = {}
