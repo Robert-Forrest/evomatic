@@ -199,9 +199,10 @@ def evolve():
     history = evo.setup_history()
 
     model = None
-    if evo.parameters["model"]:
-        model = cb.models.load(evo.parameters["model"])
-        mg.set_model(model)
+    if "model" in evo.parameters:
+        if evo.parameters["model"] is not None:
+            model = cb.models.load(evo.parameters["model"])
+            mg.set_model(model)
 
     iteration = 0
     converged = False
