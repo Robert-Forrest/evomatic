@@ -1,1 +1,6 @@
 pandas
+numpy
+matplotlib
+metallurgy
+elementy
+cerebral
