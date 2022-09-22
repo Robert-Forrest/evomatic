@@ -59,6 +59,7 @@ def calculate_comparible_fitness(data):
     else:
         minimise = 0
 
+    fitness = 0
     if (
         len(evo.parameters["targets"]["maximise"]) > 0
         and len(evo.parameters["targets"]["minimise"]) > 0
