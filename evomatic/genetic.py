@@ -101,7 +101,7 @@ def output_results(history):
         + evo.parameters["targets"]["maximise"],
         2,
     ):
-        plots.pareto_front_plot(history, pair)
+        # plots.pareto_front_plot(history, pair)
         for i in range(10):
             plots.pareto_plot(
                 history, pair, topPercentage=round((i + 1) / 10, 1)
