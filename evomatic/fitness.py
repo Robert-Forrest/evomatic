@@ -94,7 +94,7 @@ def calculate_crowding(alloys):
                 tmpAlloys.iloc[i + 1][target] - tmpAlloys.iloc[i - 1][target]
             )
 
-        distance[0] = distance[-1] = np.Inf
+    distance[0] = distance[-1] = np.Inf
 
     alloys["crowding"] = distance
 
