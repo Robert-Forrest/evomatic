@@ -49,14 +49,16 @@ def mutate(alloys):
                     del mutant_alloy_composition[remove_element]
 
             elif mutation_type == "add":
-                while True:
+                add_attempts = 0
+                while add_attempts < 50:
                     element_to_add = np.random.choice(
                         evo.parameters["constraints"]["allowed_elements"], 1
                     )[0]
                     if element_to_add not in mutant_alloy_composition:
+                        percentage = np.random.uniform()
+                        mutant_alloy_composition[element_to_add] = percentage
                         break
-                percentage = np.random.uniform()
-                mutant_alloy_composition[element_to_add] = percentage
+                    add_attempts += 1
 
             elif mutation_type == "swap":
                 validSwap = False
