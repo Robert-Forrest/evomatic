@@ -47,7 +47,6 @@ def mutate(alloys):
                 if len(removable_elements) > 0:
                     remove_element = np.random.choice(removable_elements, 1)[0]
                     del mutant_alloy_composition[remove_element]
-                    print("Removed", remove_element)
 
             elif mutation_type == "add":
                 while True:
@@ -58,7 +57,6 @@ def mutate(alloys):
                         break
                 percentage = np.random.uniform()
                 mutant_alloy_composition[element_to_add] = percentage
-                print("Added", element_to_add, percentage)
 
             elif mutation_type == "swap":
                 validSwap = False
@@ -78,8 +76,6 @@ def mutate(alloys):
                         elements_to_swap[1]
                     ] = percentages_to_swap[0]
 
-                    print("Swapped", elements_to_swap)
-
             elif mutation_type == "adjust":
                 element_to_adjust = np.random.choice(
                     list(mutant_alloy_composition.keys()), 1
@@ -93,7 +89,6 @@ def mutate(alloys):
                 mutant_alloy_composition[element_to_adjust] = max(
                     0, mutant_alloy_composition[element_to_adjust] + adjustment
                 )
-                print("adjusted", element_to_adjust, adjustment)
 
             mutant_alloy = mg.Alloy(
                 mutant_alloy_composition,
