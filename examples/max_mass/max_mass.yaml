@@ -1,0 +1,7 @@
+population_size: 50
+targets:
+  maximise:
+    - mass
+plot: true
+output_directory: ./
+
