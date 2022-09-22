@@ -30,6 +30,8 @@ def setup(in_parameters):
         if direction not in parameters["targets"]:
             parameters["targets"][direction] = []
 
+    parameters["timeSinceImprovement"] = 0
+
     parameters["target_normalisation"] = {}
     for target in (
         parameters["targets"]["maximise"] + parameters["targets"]["minimise"]
