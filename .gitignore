@@ -88,3 +88,6 @@ target/
 
 Session.vim
 *.hdf5
+
+*.dat
+*.png
