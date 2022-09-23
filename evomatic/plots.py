@@ -97,7 +97,7 @@ def plot_alloy_percentages(history):
         )
         plt.grid()
         plt.savefig(
-            evo.parameters["output_directory"] + "genetic_alloys_major.png"
+            evo.parameters["output_directory"] + "alloy_content_major.png"
         )
         plt.clf()
         plt.cla()
@@ -114,7 +114,7 @@ def plot_alloy_percentages(history):
         bbox_to_anchor=(0.5, 1.15),
     )
     plt.grid()
-    plt.savefig(evo.parameters["output_directory"] + "genetic_alloys.png")
+    plt.savefig(evo.parameters["output_directory"] + "alloys_content.png")
     plt.clf()
     plt.cla()
 
