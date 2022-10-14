@@ -14,7 +14,7 @@ def normalise(data, feature):
             data - evo.parameters["target_normalisation"][feature]["min"]
         ) / denominator
     else:
-        return 0
+        return 1
 
 
 def calculate_comparible_fitnesses(alloys):
