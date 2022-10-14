@@ -44,33 +44,23 @@ def check_converged(history):
         if len(history[target]) > evo.parameters["convergence_window"]:
 
             if target in evo.parameters["targets"]["minimise"]:
-                tolerance = (
-                    evo.parameters["convergence_tolerance"]
-                    * history[target][-1]["min"]
-                )
-                for i in range(1, evo.parameters["convergence_window"]):
-                    if (
-                        np.abs(
-                            history[target][-1]["min"]
-                            - history[target][-1 - i]["min"]
-                        )
-                        < tolerance
-                    ):
-                        converged_target[i - 1] = True
+                direction = "min"
             else:
-                tolerance = (
-                    evo.parameters["convergence_tolerance"]
-                    * history[target][-1]["max"]
-                )
-                for i in range(1, evo.parameters["convergence_window"]):
-                    if (
-                        np.abs(
-                            history[target][-1 - i]["max"]
-                            - history[target][-1]["max"]
-                        )
-                        < tolerance
-                    ):
-                        converged_target[i - 1] = True
+                direction = "max"
+
+            tolerance = np.abs(
+                evo.parameters["convergence_tolerance"]
+                * history[target][-1][direction]
+            )
+            for i in range(1, evo.parameters["convergence_window"]):
+                if (
+                    np.abs(
+                        history[target][-1][direction]
+                        - history[target][-1 - i][direction]
+                    )
+                    < tolerance
+                ):
+                    converged_target[i - 1] = True
 
         if np.all(converged_target):
             converged[j] = True
