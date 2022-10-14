@@ -136,8 +136,6 @@ def calculate_fitnesses(alloys):
                 evo.parameters["target_normalisation"][target]["max"] = row[
                     target
                 ]
-                if target in evo.parameters["targets"]["maximise"]:
-                    evo.parameters["timeSinceImprovement"] = -1
 
             if (
                 row[target]
@@ -146,10 +144,6 @@ def calculate_fitnesses(alloys):
                 evo.parameters["target_normalisation"][target]["min"] = row[
                     target
                 ]
-                if target in evo.parameters["targets"]["minimise"]:
-                    evo.parameters["timeSinceImprovement"] = -1
-
-    evo.parameters["timeSinceImprovement"] += 1
 
     tmpAlloys = alloys.copy()
 
@@ -157,6 +151,7 @@ def calculate_fitnesses(alloys):
     while len(tmpAlloys) > 0:
         pareto_filter = get_pareto_frontier(tmpAlloys)
         front = tmpAlloys.loc[pareto_filter]
+
         tmpAlloys = tmpAlloys.drop(front.index)
 
         front["rank"] = len(fronts)

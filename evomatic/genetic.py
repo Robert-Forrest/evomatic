@@ -36,11 +36,6 @@ def immigrate(numImmigrants):
 
 
 def check_converged(history):
-    if (
-        evo.parameters["timeSinceImprovement"]
-        > evo.parameters["convergence_window"]
-    ):
-        return True
 
     converged = [False] * len(evo.parameters["target_normalisation"])
     j = 0
