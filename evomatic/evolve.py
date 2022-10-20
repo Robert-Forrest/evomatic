@@ -29,6 +29,7 @@ def immigrate(num_immigrants: int) -> pd.DataFrame:
                 "percentages"
             ],
             allowed_elements=evo.parameters["constraints"]["allowed_elements"],
+            constrain_alloy=True,
         )
 
         new_alloys.append({"alloy": immigrant})
