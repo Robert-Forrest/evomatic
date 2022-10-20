@@ -1,26 +1,27 @@
-import sys
-import os
-import itertools
-import copy
+"""Module providing the basic evolutionary algorithm."""
 
 import pandas as pd
 import numpy as np
 import metallurgy as mg
-import cerebral as cb
 
 import evomatic as evo
-from . import io
-from . import plots
-from . import fitness
-from . import tournaments
-from . import recombination
-from . import mutate
 
 
-def immigrate(numImmigrants):
+def immigrate(num_immigrants: int) -> pd.DataFrame:
+    """Creates a number of new random alloy compositions to join the population.
+
+    :group: genetic
+
+    Parameters
+    ----------
+
+    num_immigrants
+        The number of new alloy compostions to be generated.
+    """
+
     new_alloys = []
 
-    for _ in range(numImmigrants):
+    for _ in range(num_immigrants):
         immigrant = mg.generate.random_alloy(
             min_elements=evo.parameters["constraints"]["min_elements"],
             max_elements=evo.parameters["constraints"]["max_elements"],
@@ -35,7 +36,18 @@ def immigrate(numImmigrants):
     return pd.DataFrame(new_alloys)
 
 
-def check_converged(history):
+def check_converged(history: dict) -> bool:
+    """Determines if the evolutionary algorithm has converged, based on the
+    improvement of performance on targets over recent history.
+
+    :group: utils
+
+    Parameters
+    ----------
+
+    history
+        The history dict, containing data from each iteration of the algorithm.
+    """
 
     converged = [False] * len(evo.parameters["target_normalisation"])
     j = 0
@@ -69,31 +81,21 @@ def check_converged(history):
     return np.all(converged)
 
 
-def output_results(history):
-    fitness.calculate_comparible_fitnesses(history["alloys"])
+def accumulate_history(alloys: pd.DataFrame, history: dict) -> dict:
+    """Appends data from the most recent iteration of the evolutionary algorithm
+    to the history dictionary.
 
-    history["alloys"] = history["alloys"].sort_values(
-        "fitness", ascending=False
-    )
+    :group: utils
 
-    io.writeOutputFile(history["alloys"], history["average_alloy"])
+    Parameters
+    ----------
 
-    plots.plot_targets(history)
-    plots.plot_alloy_percentages(history)
+    alloys
+        The current population of alloy candidates.
+    history
+        The history dict, containing data from each iteration of the algorithm.
 
-    for pair in itertools.combinations(
-        evo.parameters["targets"]["minimise"]
-        + evo.parameters["targets"]["maximise"],
-        2,
-    ):
-        # plots.pareto_front_plot(history, pair)
-        for i in range(10):
-            plots.pareto_plot(
-                history, pair, topPercentage=round((i + 1) / 10, 1)
-            )
-
-
-def accumulate_history(alloys, history):
+    """
     for target in (
         evo.parameters["targets"]["minimise"]
         + evo.parameters["targets"]["maximise"]
@@ -112,57 +114,41 @@ def accumulate_history(alloys, history):
 
     history["alloys"] = history["alloys"].drop_duplicates(subset="alloy")
 
-    totalComposition = {}
+    total_composition = {}
     for _, row in alloys.iterrows():
         alloy = mg.Alloy(row["alloy"])
         for element in alloy.composition:
-            if element not in totalComposition:
-                totalComposition[element] = 0
-            totalComposition[element] += alloy.composition[element]
-    for element in totalComposition:
-        totalComposition[element] /= len(alloys)
-    history["average_alloy"].append(totalComposition)
+            if element not in total_composition:
+                total_composition[element] = 0
+            total_composition[element] += alloy.composition[element]
+    for element in total_composition:
+        total_composition[element] /= len(alloys)
+    history["average_alloy"].append(total_composition)
 
     return history
 
 
-def output_progress(history, alloys):
+def make_new_generation(alloys: pd.DataFrame) -> pd.DataFrame:
+    """Applies the genetic operators to the current population, creating the
+    next generation.
 
-    statString = ""
-    for target in (
-        evo.parameters["targets"]["minimise"]
-        + evo.parameters["targets"]["maximise"]
-    ):
-        statString += (
-            target
-            + ": "
-            + str(round(history[target][-1]["min"], 4))
-            + ":"
-            + str(round(history[target][-1]["average"], 4))
-            + ":"
-            + str(round(history[target][-1]["max"], 4))
-            + ", "
-        )
-    statString = statString[:-2]
+    :group: genetic
 
-    print(
-        "Generation "
-        + str(len(history[target]))
-        + ", population:"
-        + str(len(alloys))
-        + ", "
-        + statString
-    )
+    Parameters
+    ----------
 
+    alloys
+        The current population of alloy candidates.
 
-def make_new_generation(alloys):
+    """
+
     alloys = alloys.copy()
 
-    parents = tournaments.hold_tournaments(alloys)
+    parents = evo.competition.compete(alloys)
 
-    children = recombination.recombine(parents)
+    children = evo.recombination.recombine(parents)
 
-    children = mutate.mutate(children)
+    children = evo.mutation.mutate(children)
 
     new_generation = children.drop_duplicates(subset="alloy")
 
@@ -178,17 +164,20 @@ def make_new_generation(alloys):
     return new_generation
 
 
-def evolve():
+def evolve() -> dict:
+    """Runs the evolutionary algorithm, generating new candidates until
+    performance on target objectives has converged.
+
+    Returns the history dictionary, containing data from each iteration of the
+    algorithm.
+
+    :group: genetic
+
+    """
 
     alloys = immigrate(evo.parameters["population_size"])
 
     history = evo.setup_history()
-
-    model = None
-    if "model" in evo.parameters:
-        if evo.parameters["model"] is not None:
-            model = cb.models.load(evo.parameters["model"])
-            mg.set_model(model)
 
     iteration = 0
     converged = False
@@ -209,11 +198,11 @@ def evolve():
 
         alloys["generation"] = iteration
 
-        alloys = fitness.calculate_fitnesses(alloys)
+        alloys = evo.fitness.calculate_fitnesses(alloys)
 
         history = accumulate_history(alloys, history)
 
-        output_progress(history, alloys)
+        evo.io.output_progress(history, alloys)
 
         if (
             iteration > evo.parameters["convergence_window"]
@@ -244,6 +233,6 @@ def evolve():
         iteration += 1
 
     if evo.parameters["plot"]:
-        output_results(history)
+        evo.io.output_results(history)
 
     return history

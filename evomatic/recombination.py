@@ -5,7 +5,20 @@ import metallurgy as mg
 import evomatic as evo
 
 
-def recombine(alloys):
+def recombine(alloys: pd.DataFrame) -> pd.DataFrame:
+    """Applies the recombination operator to the population of alloy candidates,
+    generating child alloys.
+
+    :group: genetic.operators
+
+    Parameters
+    ----------
+
+    alloys
+        The current population of alloy candidates.
+
+    """
+
     children = []
 
     while len(alloys) > 1:
