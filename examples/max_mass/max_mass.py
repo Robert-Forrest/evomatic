@@ -1,7 +1,7 @@
 import evomatic as evo
 
-evo.setup(
-    {"population_size": 50, "targets": {"maximise": ["mass"]}, "plot": True}
-)
+evo.setup({"population_size": 50, "targets": {"maximise": ["mass"]}})
 
-evo.evolve()
+history = evo.evolve()
+
+print(history["alloys"])
