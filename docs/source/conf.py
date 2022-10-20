@@ -36,8 +36,11 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
+    "sphinx_mdinclude",
     "sphinx_immaterial",
     "sphinx_immaterial.apidoc.python.apigen",
+    "sphinx_math_dollar",
+    "sphinx.ext.mathjax"
     # "sphinx_search.extension",
 ]
 autoapi_dirs = ["../../evomatic"]
@@ -58,6 +61,18 @@ intersphinx_mapping = {
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
 }
 intersphinx_disabled_domains = ["std"]
+
+mathjax3_config = {
+    "tex2jax": {
+        "inlineMath": [["\\(", "\\)"]],
+        "displayMath": [["\\[", "\\]"]],
+    },
+    "tex": {
+        "inlineMath": [["\\(", "\\)"]],
+        "displayMath": [["\\[", "\\]"]],
+    },
+}
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
