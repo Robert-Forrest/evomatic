@@ -11,7 +11,8 @@ from . import competition
 from . import recombination
 from . import mutation
 from . import io
-
+from . import fitness
+from . import plots
 
 __all__ = [
     "evolve",
@@ -20,6 +21,8 @@ __all__ = [
     "competition",
     "recombination",
     "mutation",
+    "fitness",
+    "plots",
 ]
 
 parameters = None
