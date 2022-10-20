@@ -39,8 +39,13 @@ def calculate_comparible_fitnesses(alloys):
                     target
                 ]
 
-    for i, row in alloys.iterrows():
-        alloys.at[i, "fitness"] = calculate_comparible_fitness(row)
+    comparible_fitnesses = []
+    for _, row in alloys.iterrows():
+        comparible_fitnesses.append(calculate_comparible_fitness(row))
+    alloys["fitness"] = comparible_fitnesses
+
+    alloys = calculate_fitnesses(alloys)
+    return alloys
 
 
 def calculate_comparible_fitness(data):
@@ -156,7 +161,8 @@ def calculate_fitnesses(alloys):
 
         front["rank"] = len(fronts)
 
-        calculate_crowding(front)
+        if len(evo.parameters["target_normalisation"]) > 1:
+            calculate_crowding(front)
 
         fronts.append(front)
 
@@ -200,7 +206,11 @@ def compare_candidates(A, B):
         return A
     elif B["rank"] < A["rank"]:
         return B
-    elif A["crowding"] > B["crowding"]:
-        return A
-    else:
-        return B
+
+    if "crowding" in A and "crowding" in B:
+        if A["crowding"] > B["crowding"]:
+            return A
+        else:
+            return B
+
+    return None

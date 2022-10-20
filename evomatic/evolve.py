@@ -179,6 +179,18 @@ def evolve() -> dict:
 
     history = evo.setup_history()
 
+    sort_columns = ["rank"]
+    sort_directions = [True]
+    if (
+        len(
+            evo.parameters["targets"]["maximise"]
+            + evo.parameters["targets"]["minimise"]
+        )
+        > 1
+    ):
+        sort_columns.append("crowding")
+        sort_directions.append(False)
+
     iteration = 0
     converged = False
     while (
@@ -202,7 +214,8 @@ def evolve() -> dict:
 
         history = accumulate_history(alloys, history)
 
-        evo.io.output_progress(history, alloys)
+        if evo.parameters["verbosity"] > 0:
+            evo.io.output_progress(history, alloys)
 
         if (
             iteration > evo.parameters["convergence_window"]
@@ -215,13 +228,14 @@ def evolve() -> dict:
         if iteration < evo.parameters["max_iterations"] - 1:
 
             alloys = alloys.sort_values(
-                by=["rank", "crowding"], ascending=[True, False]
+                by=sort_columns, ascending=sort_directions
             ).head(evo.parameters["population_size"])
 
             children = make_new_generation(alloys)
 
-            alloys = pd.concat([alloys, children], ignore_index=True)
-            alloys = alloys.drop_duplicates(subset="alloy")
+            alloys = pd.concat(
+                [alloys, children], ignore_index=True
+            ).drop_duplicates(subset="alloy")
 
             while len(alloys) < 2 * evo.parameters["population_size"]:
                 immigrants = immigrate(
@@ -232,7 +246,8 @@ def evolve() -> dict:
 
         iteration += 1
 
-    if evo.parameters["plot"]:
-        evo.io.output_results(history)
+    history["alloys"] = evo.fitness.calculate_comparible_fitnesses(
+        history["alloys"]
+    ).sort_values("fitness", ascending=False)
 
     return history
