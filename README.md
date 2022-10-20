@@ -26,4 +26,7 @@ history = evo.evolve()
 evo.plots.plot_targets(history)
 ```
 
+## Documentation
+
+Documentation is available [here.](https://evomatic.readthedocs.io/en/latest/api.html)
 

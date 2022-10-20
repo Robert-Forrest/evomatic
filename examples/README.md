@@ -1,7 +1,7 @@
-# Examples
+## Examples
 
-The (examples
-directory)[https://github.com/Robert-Forrest/evomatic/tree/main/examples]
+The [examples
+directory](https://github.com/Robert-Forrest/evomatic/tree/main/examples)
 contains a number of example scenarios, applying evomatic to optimise different
 targets.
 

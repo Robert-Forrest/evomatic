@@ -5,9 +5,12 @@
 
 .. mdinclude:: ../../README.md
 
+.. mdinclude:: ../../examples/README.md
+
 .. toctree::
    :caption: API Reference
-
+   :hidden:
+             
    api.rst
 
 Index
