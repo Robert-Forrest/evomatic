@@ -36,15 +36,11 @@ def output_progress(history, alloys):
     )
 
 
-def output_results(history):
-    evo.fitness.calculate_comparible_fitnesses(history["alloys"])
+def output_results(history, output_directory="./"):
 
-    history["alloys"] = history["alloys"].sort_values(
-        "fitness", ascending=False
+    write_output_file(
+        history["alloys"], history["average_alloy"], output_directory
     )
-
-    if evo.parameters["output_directory"] is not None:
-        write_output_file(history["alloys"], history["average_alloy"])
 
     evo.plots.plot_targets(history)
     evo.plots.plot_alloy_percentages(history)
@@ -61,11 +57,9 @@ def output_results(history):
             )
 
 
-def write_output_file(alloys, averageAlloyHistory):
+def write_output_file(alloys, averageAlloyHistory, output_directory="./"):
 
-    with open(
-        evo.parameters["output_directory"] + "genetic.dat", "w"
-    ) as genetic_file:
+    with open(output_directory + "genetic.dat", "w") as genetic_file:
         genetic_file.write(
             "# rank generation alloy fitness "
             + " ".join(
@@ -102,9 +96,7 @@ def write_output_file(alloys, averageAlloyHistory):
             if element not in elements:
                 elements.append(element)
 
-    with open(
-        evo.parameters["output_directory"] + "genetic_extended.dat", "w"
-    ) as genetic_file:
+    with open(output_directory + "genetic_extended.dat", "w") as genetic_file:
         genetic_file.write(
             "# rank generation "
             + " ".join(elements)

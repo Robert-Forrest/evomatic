@@ -180,20 +180,8 @@ def setup(user_parameters: dict):
     if "percentage_step" not in parameters:
         parameters["percentage_step"] = percentage_step = 0.01
 
-    if "output_directory" not in parameters:
-        parameters["output_directory"] = None
-    elif parameters["output_directory"][-1] != "/":
-        parameters["output_directory"] += "/"
-
-    if "plot" not in parameters:
-        parameters["plot"] = False
-
-    if parameters["plot"] and parameters["output_directory"] is not None:
-        import matplotlib.pyplot as plt  # pylint: disable=import-error
-        import matplotlib as mpl  # pylint: disable=import-error
-
-        mpl.use("Agg")
-        plt.style.use("ggplot")
+    if "verbosity" not in parameters:
+        parameters["verbosity"] = 0
 
     parameters["sigfigs"] = -int(f"{percentage_step:e}".split("e")[-1])
 
