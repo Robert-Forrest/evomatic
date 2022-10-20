@@ -1,16 +1,44 @@
+"""Evomatic
+
+A genetic algorithm tool for the development of new alloys."""
+
 import pandas as pd
 import numpy as np
 import metallurgy as mg
 
-from .genetic import evolve
+from .evolve import evolve
+from . import competition
+from . import recombination
+from . import mutation
+from . import io
+
+
+__all__ = [
+    "evolve",
+    "genetic",
+    "io",
+    "competition",
+    "recombination",
+    "mutation",
+]
 
 parameters = None
 
 
-def setup(in_parameters):
+def setup(user_parameters: dict):
+    """Initialises evomatic's default parameters.
+
+    :group: utils
+
+    Parameters
+    ----------
+
+    user_parameters
+        Parameters set by the user.
+    """
     global parameters
 
-    parameters = in_parameters
+    parameters = user_parameters
 
     if "targets" not in parameters:
         print("No targets set.")
@@ -29,8 +57,6 @@ def setup(in_parameters):
     for direction in ["minimise", "maximise"]:
         if direction not in parameters["targets"]:
             parameters["targets"][direction] = []
-
-    parameters["timeSinceImprovement"] = 0
 
     parameters["target_normalisation"] = {}
     for target in (
@@ -136,6 +162,7 @@ def setup(in_parameters):
     if "convergence_tolerance" not in parameters:
         parameters["convergence_tolerance"] = 0.01
 
+    parameters["competition_type"] = "tournament"
     if "selection_percentage" not in parameters:
         parameters["selection_percentage"] = 0.5
     if "tournament_size" not in parameters:
@@ -150,25 +177,44 @@ def setup(in_parameters):
     if "percentage_step" not in parameters:
         parameters["percentage_step"] = percentage_step = 0.01
 
+    if "output_directory" not in parameters:
+        parameters["output_directory"] = None
+    elif parameters["output_directory"][-1] != "/":
+        parameters["output_directory"] += "/"
+
     if "plot" not in parameters:
         parameters["plot"] = False
 
-    if "output_directory" not in parameters:
-        parameters["output_directory"] = "./"
-    if parameters["output_directory"][-1] != "/":
-        parameters["output_directory"] += "/"
+    if parameters["plot"] and parameters["output_directory"] is not None:
+        import matplotlib.pyplot as plt  # pylint: disable=import-error
+        import matplotlib as mpl  # pylint: disable=import-error
+
+        mpl.use("Agg")
+        plt.style.use("ggplot")
 
     parameters["sigfigs"] = -int(f"{percentage_step:e}".split("e")[-1])
 
+    if "model" in parameters:
+        if parameters["model"] is not None:
+            import cerebral as cb
 
-def setup_history():
+            mg.set_model(cb.models.load(parameters["model"]))
+
+
+def setup_history() -> dict:
+    """Sets up the history object with empty data structures, to be filled in
+    during an evolution.
+
+    :group: utils
+    """
+
     global parameters
 
     history = {"average_alloy": [], "alloys": pd.DataFrame({})}
+
     for target in (
         parameters["targets"]["minimise"] + parameters["targets"]["maximise"]
     ):
-
         history[target] = []
 
     return history

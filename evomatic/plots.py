@@ -9,9 +9,6 @@ import metallurgy as mg
 import evomatic as evo
 from . import fitness
 
-mpl.use("Agg")
-plt.style.use("ggplot")
-
 
 def plot_targets(history):
 
@@ -24,9 +21,9 @@ def plot_targets(history):
             )
 
         plt.xlabel("Generations")
-        label = mg.features.pretty_name(target)
-        if target in mg.features.units:
-            label += " (" + mg.features.units[target] + ")"
+        label = mg.properties.pretty_name(target)
+        if target in mg.properties.units:
+            label += " (" + mg.properties.units[target] + ")"
         plt.ylabel(label)
 
         log_scale = False
@@ -50,7 +47,10 @@ def plot_targets(history):
 
         plt.grid()
         plt.legend(loc="best")
-        plt.savefig(evo.parameters["output_directory"] + target + ".png")
+        if evo.parameters["output_directory"] is not None:
+            plt.savefig(evo.parameters["output_directory"] + target + ".png")
+        else:
+            plt.show()
         plt.clf()
         plt.cla()
 
@@ -59,7 +59,12 @@ def plot_targets(history):
         plt.grid()
         plt.yscale("log")
         plt.xlabel(label)
-        plt.savefig(evo.parameters["output_directory"] + target + "_hist.png")
+        if evo.parameters["output_directory"] is not None:
+            plt.savefig(
+                evo.parameters["output_directory"] + target + "_hist.png"
+            )
+        else:
+            plt.show()
         plt.clf()
         plt.cla()
 
@@ -96,9 +101,12 @@ def plot_alloy_percentages(history):
             bbox_to_anchor=(0.5, 1.15),
         )
         plt.grid()
-        plt.savefig(
-            evo.parameters["output_directory"] + "alloy_content_major.png"
-        )
+        if evo.parameters["output_directory"] is not None:
+            plt.savefig(
+                evo.parameters["output_directory"] + "alloy_content_major.png"
+            )
+        else:
+            plt.show()
         plt.clf()
         plt.cla()
 
@@ -114,7 +122,10 @@ def plot_alloy_percentages(history):
         bbox_to_anchor=(0.5, 1.15),
     )
     plt.grid()
-    plt.savefig(evo.parameters["output_directory"] + "alloys_content.png")
+    if evo.parameters["output_directory"] is not None:
+        plt.savefig(evo.parameters["output_directory"] + "alloys_content.png")
+    else:
+        plt.show()
     plt.clf()
     plt.cla()
 
@@ -163,7 +174,10 @@ def pareto_front_plot(history, pair):
         + pair[1]
     )
     plt.tight_layout()
-    plt.savefig(imageName + ".png")
+    if evo.parameters["output_directory"] is not None:
+        plt.savefig(imageName + ".png")
+    else:
+        plt.show()
     plt.clf()
     plt.cla()
     plt.close()
@@ -360,14 +374,14 @@ def pareto_plot(history, pair, topPercentage=1.0):
             plt.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
 
     for i in range(len(pair)):
-        label = mg.features.pretty_name(pair[i])
+        label = mg.properties.pretty_name(pair[i])
         if pair[i] not in evo.parameters["targets"]["maximise"]:
-            label = mg.features.pretty_name(pair[i]) + r"$^{-1}$"
-            if pair[i] in mg.features.inverse_units:
-                label += " (" + mg.features.inverse_units[pair[i]] + ")"
+            label = mg.properties.pretty_name(pair[i]) + r"$^{-1}$"
+            if pair[i] in mg.properties.inverse_units:
+                label += " (" + mg.properties.inverse_units[pair[i]] + ")"
         else:
-            if pair[i] in mg.features.units:
-                label += " (" + mg.features.units[pair[i]] + ")"
+            if pair[i] in mg.properties.units:
+                label += " (" + mg.properties.units[pair[i]] + ")"
 
         if i == 0:
             plt.xlabel(label)
@@ -377,18 +391,23 @@ def pareto_plot(history, pair, topPercentage=1.0):
     plt.grid()
     cbar = plt.colorbar()
     cbar.set_label("Generation")
-    imageName = (
-        evo.parameters["output_directory"]
-        + "pareto_"
-        + pair[0]
-        + "_"
-        + pair[1]
-    )
-    if topPercentage != 1.0:
-        imageName += "_top" + str(topPercentage)
+
     fig.tight_layout()
     plt.tight_layout()
-    plt.savefig(imageName + ".png")
+
+    if evo.parameters["output_directory"] is not None:
+        imageName = (
+            evo.parameters["output_directory"]
+            + "pareto_"
+            + pair[0]
+            + "_"
+            + pair[1]
+        )
+        if topPercentage != 1.0:
+            imageName += "_top" + str(topPercentage)
+        plt.savefig(imageName + ".png")
+    else:
+        plt.show()
     plt.clf()
     plt.cla()
     plt.close()
