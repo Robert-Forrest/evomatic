@@ -87,8 +87,8 @@ def add_element(alloy: mg.Alloy) -> mg.Alloy:
         if element not in alloy.elements
     ]
 
-    if len(possible_additions) > 1:
-        element_to_add = np.random.choice(possible_additions)[0]
+    if len(possible_additions) > 0:
+        element_to_add = np.random.choice(possible_additions)
         percentage = np.random.uniform()
         alloy.composition[element_to_add] = percentage
 
