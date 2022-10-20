@@ -61,8 +61,8 @@ def remove_element(alloy: mg.Alloy) -> mg.Alloy:
                 removable_elements.remove(element)
 
     if len(removable_elements) > 0:
-        remove_element = np.random.choice(removable_elements, 1)[0]
-        del alloy.composition[remove_element]
+        element = np.random.choice(removable_elements, 1)[0]
+        alloy.remove_element(element)
 
     return alloy
 
@@ -90,7 +90,7 @@ def add_element(alloy: mg.Alloy) -> mg.Alloy:
     if len(possible_additions) > 0:
         element_to_add = np.random.choice(possible_additions)
         percentage = np.random.uniform()
-        alloy.composition[element_to_add] = percentage
+        alloy.add_element(element_to_add, percentage)
 
     return alloy
 
