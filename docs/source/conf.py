@@ -81,6 +81,8 @@ def linkcode_resolve(domain, info):
     if not info["module"]:
         return None
     filename = info["module"].replace(".", "/")
+    if filename == "evomatic":
+        filename += "/__init__"
     return (
         "https://github.com/Robert-Forrest/evomatic/blob/main/%s.py" % filename
     )
