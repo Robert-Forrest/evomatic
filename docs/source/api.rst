@@ -6,7 +6,6 @@ evomatic
 
 Genetic Operators
 -----------------
-.. python-apigen-group:: genetic.operators
 
 Competition
 ^^^^^^^^^^^
@@ -20,7 +19,15 @@ Mutation
 ^^^^^^^^
 .. python-apigen-group:: genetic.operators.mutation
 
+Fitness
+-------
+.. python-apigen-group:: fitness
+
                          
 Utilities
 ---------
 .. python-apigen-group:: utils
+
+Plots
+^^^^^
+.. python-apigen-group:: plots
