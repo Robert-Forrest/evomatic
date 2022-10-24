@@ -1,23 +1,37 @@
+"""Module providing plotting utilities."""
+
 import string
 import re
+from typing import List
 
 import numpy as np
-import matplotlib.pyplot as plt  # pylint: disable=import-error
-import matplotlib as mpl  # pylint: disable=import-error
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 import metallurgy as mg
 
 import evomatic as evo
-from . import fitness
 
 
-def plot_targets(history):
+def plot_targets(history: dict):
+    """Plot the values of targets, as line graphs across the evolution, and
+    histograms across the population.
+
+    :group: plots
+
+    Parameters
+    ----------
+
+    history
+        The history dict, containing data from each iteration of the algorithm.
+
+    """
 
     for target in list(evo.parameters["target_normalisation"].keys()):
-        for l in ["min", "average", "max"]:
+        for label in ["min", "average", "max"]:
             plt.plot(
                 [i + 1 for i in range(len(history[target]))],
-                [x[l] for x in history[target]],
-                label=l,
+                [x[label] for x in history[target]],
+                label=label,
             )
 
         plt.xlabel("Generations")
@@ -70,6 +84,18 @@ def plot_targets(history):
 
 
 def plot_alloy_percentages(history):
+    """Plot the average alloy percentages across the evolution.
+
+    :group: plots
+
+    Parameters
+    ----------
+
+    history
+        The history dict, containing data from each iteration of the algorithm.
+
+    """
+
     alloy_history = {}
     for i in range(len(history["average_alloy"])):
         for element in history["average_alloy"][i]:
@@ -130,7 +156,20 @@ def plot_alloy_percentages(history):
     plt.cla()
 
 
-def pareto_front_plot(history, pair):
+def pareto_front_plot(history: dict, pair: List[str]):
+    """Plot the Pareto diagram of two targets, highlighting the frontiers.
+
+    :group: plots
+
+    Parameters
+    ----------
+
+    history
+        The history dict, containing data from each iteration of the algorithm.
+    pair
+        The two targets to define the 2D space.
+
+    """
 
     max_generation = np.max(history["alloys"]["generation"])
 
@@ -183,10 +222,26 @@ def pareto_front_plot(history, pair):
     plt.close()
 
 
-def pareto_plot(history, pair, topPercentage=1.0):
+def pareto_plot(history, pair, top_percentage=1.0):
+    """Plot the Pareto diagram of two targets.
+
+    :group: plots
+
+    Parameters
+    ----------
+
+    history
+        The history dict, containing data from each iteration of the algorithm.
+    pair
+        The two targets to define the 2D space.
+    top_percentage
+        The fraction of the population to include in the diagram, ranked by fitness.
+
+    """
+
     cm = plt.cm.get_cmap("viridis")
 
-    numBest = int(topPercentage * len(history["alloys"]))
+    numBest = int(top_percentage * len(history["alloys"]))
 
     best_alloys = history["alloys"].head(numBest)
 
@@ -197,17 +252,17 @@ def pareto_plot(history, pair, topPercentage=1.0):
         if item in evo.parameters["targets"]["minimise"]:
             scatter_data.append(best_alloys[item] ** -1)
             pareto_filter_input.append(
-                fitness.normalise(best_alloys[item], item)
+                evo.fitness.normalise(best_alloys[item], item)
             )
         else:
             scatter_data.append(best_alloys[item])
             pareto_filter_input.append(
-                fitness.normalise(best_alloys[item], item) ** -1
+                evo.fitness.normalise(best_alloys[item], item) ** -1
             )
 
     alloy_labels = best_alloys["alloy"]
 
-    pareto_filter = fitness.is_pareto_efficient(pareto_filter_input)
+    pareto_filter = evo.fitness.is_pareto_efficient(pareto_filter_input)
     pareto_frontier = [[], [], []]
     for i in range(len(scatter_data[0])):
         if pareto_filter[i]:
@@ -260,13 +315,13 @@ def pareto_plot(history, pair, topPercentage=1.0):
 
                     distance = 0
                     for j in range(2):
-                        candidate = fitness.normalise(
+                        candidate = evo.fitness.normalise(
                             pareto_frontier[i][j], pair[j]
                         )
-                        start = fitness.normalise(
+                        start = evo.fitness.normalise(
                             pareto_frontier[0][j], pair[j]
                         )
-                        end = fitness.normalise(
+                        end = evo.fitness.normalise(
                             pareto_frontier[labelIndices[1]][j], pair[j]
                         )
                         distance += 0.5 * np.abs(
@@ -403,8 +458,8 @@ def pareto_plot(history, pair, topPercentage=1.0):
             + "_"
             + pair[1]
         )
-        if topPercentage != 1.0:
-            imageName += "_top" + str(topPercentage)
+        if top_percentage != 1.0:
+            imageName += "_top" + str(top_percentage)
         plt.savefig(imageName + ".png")
     else:
         plt.show()

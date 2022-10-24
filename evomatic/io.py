@@ -2,12 +2,27 @@
 
 import itertools
 
+import pandas as pd
 import metallurgy as mg
 
 import evomatic as evo
 
 
-def output_progress(history, alloys):
+def output_progress(history: dict, alloys: pd.DataFrame):
+    """Prints a string summarising the current alloy population's performance on
+    each of the targets.
+
+    :group: utils
+
+    Parameters
+    ----------
+
+    alloys
+        The current population of alloy candidates.
+    history
+        The history dict, containing data from each iteration of the algorithm.
+
+    """
 
     stats_string = ""
     for target in (
@@ -36,7 +51,20 @@ def output_progress(history, alloys):
     )
 
 
-def output_results(history, output_directory="./"):
+def output_results(history: dict, output_directory: str = "./"):
+    """Triggers writing of output files, including raw data and plot images.
+
+    :group: utils
+
+    Parameters
+    ----------
+
+    history
+        The history dict, containing data from each iteration of the algorithm.
+    output_directory
+        The path to write output files into.
+
+    """
 
     write_output_file(
         history["alloys"], history["average_alloy"], output_directory
@@ -57,7 +85,24 @@ def output_results(history, output_directory="./"):
             )
 
 
-def write_output_file(alloys, averageAlloyHistory, output_directory="./"):
+def write_output_file(
+    alloys: pd.DataFrame,
+    average_alloy_history: dict,
+    output_directory: str = "./",
+):
+    """Writes output files.
+
+    :group: utils
+
+    Parameters
+    ----------
+
+    alloys
+        All the alloy candidates considered by the algorithm.
+    average_alloy_history
+        History of the average percentage composition of alloys throughout the evolution.
+
+    """
 
     with open(output_directory + "genetic.dat", "w") as genetic_file:
         genetic_file.write(
@@ -91,8 +136,8 @@ def write_output_file(alloys, averageAlloyHistory, output_directory="./"):
             i += 1
 
     elements = []
-    for i in range(len(averageAlloyHistory)):
-        for element in averageAlloyHistory[i]:
+    for i in range(len(average_alloy_history)):
+        for element in average_alloy_history[i]:
             if element not in elements:
                 elements.append(element)
 

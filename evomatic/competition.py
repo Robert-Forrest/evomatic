@@ -1,3 +1,5 @@
+"""Module providing competition operations."""
+
 import numpy as np
 import pandas as pd
 
@@ -47,7 +49,14 @@ def tournaments(alloys: pd.DataFrame) -> pd.DataFrame:
 def compete(alloys: pd.DataFrame) -> pd.DataFrame:
     """Applies the competition operator to the alloy candidate population.
 
-    :group: genetic.operators
+    :group: genetic.operators.competition
+
+    Parameters
+    ----------
+
+    alloys
+        The current population of alloy candidates.
+
     """
 
     if evo.parameters["competition_type"] == "tournament":

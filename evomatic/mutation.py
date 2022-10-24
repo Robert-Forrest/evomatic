@@ -17,7 +17,7 @@ def determine_possible_mutation_types(alloy: mg.Alloy) -> List[str]:
     Parameters
     ----------
 
-    composition
+    alloy
         The alloy composition being mutated.
 
     """
@@ -45,7 +45,7 @@ def remove_element(alloy: mg.Alloy) -> mg.Alloy:
     Parameters
     ----------
 
-    composition
+    alloy
         The alloy composition being mutated.
 
     """
@@ -104,7 +104,7 @@ def swap_elements(alloy: mg.Alloy) -> mg.Alloy:
     Parameters
     ----------
 
-    composition
+    alloy
         The alloy composition being mutated.
 
     """
@@ -132,7 +132,7 @@ def adjust_element(alloy: mg.Alloy) -> mg.Alloy:
     Parameters
     ----------
 
-    composition
+    alloy
         The alloy composition being mutated.
 
     """
@@ -155,7 +155,7 @@ def mutate(alloys: pd.DataFrame) -> pd.DataFrame:
     """Applies the mutation operator to the population of alloy candidates,
     generating child alloys.
 
-    :group: genetic.operators
+    :group: genetic.operators.mutation
 
     Parameters
     ----------

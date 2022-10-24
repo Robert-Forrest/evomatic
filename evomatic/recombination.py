@@ -9,7 +9,7 @@ def recombine(alloys: pd.DataFrame) -> pd.DataFrame:
     """Applies the recombination operator to the population of alloy candidates,
     generating child alloys.
 
-    :group: genetic.operators
+    :group: genetic.operators.recombination
 
     Parameters
     ----------
