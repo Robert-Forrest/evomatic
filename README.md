@@ -14,7 +14,9 @@ The evomatic package can be installed from
 
 Evomatic makes heavy use of the
 [metallurgy](https://github.com/Robert-Forrest/metallurgy) package to manipulate
-and approximate properties of alloys.
+and approximate properties of alloys. The
+[cerebral](https://github.com/Robert-Forrest/cerebral) package can be used by
+evomatic to obtain predictions of alloy properties on-the-fly during evolution.
 
 ## Usage
 
