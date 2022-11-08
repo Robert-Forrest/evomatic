@@ -11,6 +11,11 @@ import evomatic as evo
 
 
 class Evolver:
+    """Evolver class
+
+    :group: evolver
+    """
+
     def __init__(
         self,
         targets,
@@ -105,7 +110,18 @@ class Evolver:
 
         self.setup_history()
 
-    def setup_constraints(self, constraints):
+    def setup_constraints(self, constraints: dict):
+        """Sets up the constraints for alloy compositions during evolution.
+
+        :group: utils
+
+        Parameters
+        ----------
+
+        constraints
+            The constraints on alloy compositions that can be generated.
+
+        """
         if constraints is not None:
 
             if "max_elements" not in constraints:
@@ -184,7 +200,19 @@ class Evolver:
             constraints["percentages"] = {}
         self.constraints = constraints
 
-    def setup_targets(self, targets):
+    def setup_targets(self, targets: dict):
+        """Sets up the targets and target_normalisation attributes.
+
+        :group: utils
+
+        Parameters
+        ----------
+
+        targets
+            Dict of targets for maximisation and minimisation.
+
+        """
+
         self.targets = targets
         if self.targets is None or (
             "maximise" not in self.targets and "minimise" not in self.targets
