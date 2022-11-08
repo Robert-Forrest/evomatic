@@ -27,9 +27,9 @@ high mass:
 ```python
 >>> import evomatic as evo
 
->>> evo.setup({"population_size": 50,  "targets": {"maximise": ["mass"]}})
+>>> evolver = evo.Evolver({"population_size": 50, "targets": {"maximise": ["mass"]}})
 
->>> history = evo.evolve()
+>>> history = evolver.evolve()
 
 >>> history["alloys"]
                        alloy        mass  generation  rank   fitness
@@ -48,7 +48,6 @@ high mass:
 
 In this simple example, there is no better material for the objective of maximum
 mass than pure Oganesson. 
-
 
 ## Documentation
 
