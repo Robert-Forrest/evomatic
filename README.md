@@ -27,7 +27,7 @@ high mass:
 ```python
 >>> import evomatic as evo
 
->>> evolver = evo.Evolver({"population_size": 50, "targets": {"maximise": ["mass"]}})
+>>> evolver = evo.Evolver(targets={"maximise": ["mass"]}, population_size=50)
 
 >>> history = evolver.evolve()
 
