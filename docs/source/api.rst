@@ -3,6 +3,7 @@
 evomatic
 ==========
 .. python-apigen-group:: genetic
+.. python-apigen-group:: evolver
 
 Genetic Operators
 -----------------
