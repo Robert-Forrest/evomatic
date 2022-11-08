@@ -2,10 +2,8 @@ import numpy as np
 import pandas as pd
 import metallurgy as mg
 
-import evomatic as evo
 
-
-def recombine(alloys: pd.DataFrame) -> pd.DataFrame:
+def recombine(alloys: pd.DataFrame, recombination_rate: float) -> pd.DataFrame:
     """Applies the recombination operator to the population of alloy candidates,
     generating child alloys.
 
@@ -16,6 +14,9 @@ def recombine(alloys: pd.DataFrame) -> pd.DataFrame:
 
     alloys
         The current population of alloy candidates.
+    recombination_rate
+        Percentage chance of recombination ocurring rather than simple copying
+        of the parents into the next generation.
 
     """
 
@@ -30,7 +31,7 @@ def recombine(alloys: pd.DataFrame) -> pd.DataFrame:
         for _, row in parents.iterrows():
             parent_alloys.append(row["alloy"])
 
-        if np.random.uniform() < evo.parameters["recombination_rate"]:
+        if np.random.uniform() < recombination_rate:
 
             alpha = np.random.uniform()
 

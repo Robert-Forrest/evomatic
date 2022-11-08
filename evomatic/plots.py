@@ -1,5 +1,6 @@
 """Module providing plotting utilities."""
 
+import os
 import string
 import re
 from typing import List
@@ -12,7 +13,7 @@ import metallurgy as mg
 import evomatic as evo
 
 
-def plot_targets(history: dict):
+def plot_targets(history: dict, targets: dict, output_directory: str = "./"):
     """Plot the values of targets, as line graphs across the evolution, and
     histograms across the population.
 
@@ -23,10 +24,16 @@ def plot_targets(history: dict):
 
     history
         The history dict, containing data from each iteration of the algorithm.
+    targets
+        Dict of targets for maximisation and minimisation.
+    output_directory
+        The path to write output files into.
 
     """
 
-    for target in list(evo.parameters["target_normalisation"].keys()):
+    output_directory = ensure_output_directory(output_directory)
+
+    for target in targets["minimise"] + targets["maximise"]:
         for label in ["min", "average", "max"]:
             plt.plot(
                 [i + 1 for i in range(len(history[target]))],
@@ -41,7 +48,7 @@ def plot_targets(history: dict):
         plt.ylabel(label)
 
         log_scale = False
-        if target in evo.parameters["targets"]["minimise"]:
+        if target in targets["minimise"]:
             if (
                 history[target][0]["average"]
                 / (history[target][-1]["average"] + 1e-9)
@@ -61,8 +68,8 @@ def plot_targets(history: dict):
 
         plt.grid()
         plt.legend(loc="best")
-        if evo.parameters["output_directory"] is not None:
-            plt.savefig(evo.parameters["output_directory"] + target + ".png")
+        if output_directory is not None:
+            plt.savefig(output_directory + target + ".png")
         else:
             plt.show()
         plt.clf()
@@ -73,17 +80,15 @@ def plot_targets(history: dict):
         plt.grid()
         plt.yscale("log")
         plt.xlabel(label)
-        if evo.parameters["output_directory"] is not None:
-            plt.savefig(
-                evo.parameters["output_directory"] + target + "_hist.png"
-            )
+        if output_directory is not None:
+            plt.savefig(output_directory + target + "_hist.png")
         else:
             plt.show()
         plt.clf()
         plt.cla()
 
 
-def plot_alloy_percentages(history):
+def plot_alloy_percentages(history: dict, output_directory: str = "./"):
     """Plot the average alloy percentages across the evolution.
 
     :group: plots
@@ -93,8 +98,12 @@ def plot_alloy_percentages(history):
 
     history
         The history dict, containing data from each iteration of the algorithm.
+    output_directory
+        The path to write output files into.
 
     """
+
+    output_directory = ensure_output_directory(output_directory)
 
     alloy_history = {}
     for i in range(len(history["average_alloy"])):
@@ -127,10 +136,8 @@ def plot_alloy_percentages(history):
             bbox_to_anchor=(0.5, 1.15),
         )
         plt.grid()
-        if evo.parameters["output_directory"] is not None:
-            plt.savefig(
-                evo.parameters["output_directory"] + "alloy_content_major.png"
-            )
+        if output_directory is not None:
+            plt.savefig(output_directory + "alloy_content_major.png")
         else:
             plt.show()
         plt.clf()
@@ -148,15 +155,17 @@ def plot_alloy_percentages(history):
         bbox_to_anchor=(0.5, 1.15),
     )
     plt.grid()
-    if evo.parameters["output_directory"] is not None:
-        plt.savefig(evo.parameters["output_directory"] + "alloys_content.png")
+    if output_directory is not None:
+        plt.savefig(output_directory + "alloys_content.png")
     else:
         plt.show()
     plt.clf()
     plt.cla()
 
 
-def pareto_front_plot(history: dict, pair: List[str]):
+def pareto_front_plot(
+    history: dict, pair: List[str], output_directory: str = "./"
+):
     """Plot the Pareto diagram of two targets, highlighting the frontiers.
 
     :group: plots
@@ -168,8 +177,12 @@ def pareto_front_plot(history: dict, pair: List[str]):
         The history dict, containing data from each iteration of the algorithm.
     pair
         The two targets to define the 2D space.
+    output_directory
+        The path to write output files into.
 
     """
+
+    output_directory = ensure_output_directory(output_directory)
 
     max_generation = np.max(history["alloys"]["generation"])
 
@@ -205,15 +218,9 @@ def pareto_front_plot(history: dict, pair: List[str]):
 
     plt.grid()
     plt.legend(loc="best")
-    imageName = (
-        evo.parameters["output_directory"]
-        + "pareto_fronts_"
-        + pair[0]
-        + "_"
-        + pair[1]
-    )
+    imageName = output_directory + "pareto_fronts_" + pair[0] + "_" + pair[1]
     plt.tight_layout()
-    if evo.parameters["output_directory"] is not None:
+    if output_directory is not None:
         plt.savefig(imageName + ".png")
     else:
         plt.show()
@@ -222,7 +229,14 @@ def pareto_front_plot(history: dict, pair: List[str]):
     plt.close()
 
 
-def pareto_plot(history, pair, top_percentage=1.0):
+def pareto_plot(
+    history,
+    pair,
+    targets,
+    target_normalisation,
+    top_percentage=1.0,
+    output_directory: str = "./",
+):
     """Plot the Pareto diagram of two targets.
 
     :group: plots
@@ -234,10 +248,19 @@ def pareto_plot(history, pair, top_percentage=1.0):
         The history dict, containing data from each iteration of the algorithm.
     pair
         The two targets to define the 2D space.
+    targets
+        Dict of targets for maximisation and minimisation.
+    target_normalisation
+        Dict of normalisation factors for each target.
     top_percentage
-        The fraction of the population to include in the diagram, ranked by fitness.
+        The fraction of the population to include in the diagram, ranked by
+        fitness.
+    output_directory
+        The path to write output files into.
 
     """
+
+    output_directory = ensure_output_directory(output_directory)
 
     cm = plt.cm.get_cmap("viridis")
 
@@ -249,15 +272,26 @@ def pareto_plot(history, pair, top_percentage=1.0):
     pareto_filter_input = []
 
     for item in pair:
-        if item in evo.parameters["targets"]["minimise"]:
+        if item in targets["minimise"]:
             scatter_data.append(best_alloys[item] ** -1)
             pareto_filter_input.append(
-                evo.fitness.normalise(best_alloys[item], item)
+                evo.fitness.normalise(
+                    best_alloys[item],
+                    item,
+                    target_normalisation[item]["max"],
+                    target_normalisation[item]["min"],
+                )
             )
         else:
             scatter_data.append(best_alloys[item])
             pareto_filter_input.append(
-                evo.fitness.normalise(best_alloys[item], item) ** -1
+                evo.fitness.normalise(
+                    best_alloys[item],
+                    item,
+                    target_normalisation[item]["max"],
+                    target_normalisation[item]["min"],
+                )
+                ** -1
             )
 
     alloy_labels = best_alloys["alloy"]
@@ -316,13 +350,22 @@ def pareto_plot(history, pair, top_percentage=1.0):
                     distance = 0
                     for j in range(2):
                         candidate = evo.fitness.normalise(
-                            pareto_frontier[i][j], pair[j]
+                            pareto_frontier[i][j],
+                            pair[j],
+                            target_normalisation[pair[j]]["max"],
+                            target_normalisation[pair[j]]["min"],
                         )
                         start = evo.fitness.normalise(
-                            pareto_frontier[0][j], pair[j]
+                            pareto_frontier[0][j],
+                            pair[j],
+                            target_normalisation[pair[j]]["max"],
+                            target_normalisation[pair[j]]["min"],
                         )
                         end = evo.fitness.normalise(
-                            pareto_frontier[labelIndices[1]][j], pair[j]
+                            pareto_frontier[labelIndices[1]][j],
+                            pair[j],
+                            target_normalisation[pair[j]]["max"],
+                            target_normalisation[pair[j]]["min"],
                         )
                         distance += 0.5 * np.abs(
                             (candidate - start) - (candidate - end)
@@ -396,7 +439,7 @@ def pareto_plot(history, pair, top_percentage=1.0):
 
     labelBoxPosition = (0.99, 0.01)
     labelBoxLoc = "lower right"
-    if any([t in evo.parameters["targets"]["minimise"] for t in pair]):
+    if any([t in targets["minimise"] for t in pair]):
         labelBoxPosition = (0.99, 0.99)
         labelBoxLoc = "upper right"
 
@@ -430,7 +473,7 @@ def pareto_plot(history, pair, top_percentage=1.0):
 
     for i in range(len(pair)):
         label = mg.properties.pretty_name(pair[i])
-        if pair[i] not in evo.parameters["targets"]["maximise"]:
+        if pair[i] not in targets["maximise"]:
             label = mg.properties.pretty_name(pair[i]) + r"$^{-1}$"
             if pair[i] in mg.properties.inverse_units:
                 label += " (" + mg.properties.inverse_units[pair[i]] + ")"
@@ -450,14 +493,8 @@ def pareto_plot(history, pair, top_percentage=1.0):
     fig.tight_layout()
     plt.tight_layout()
 
-    if evo.parameters["output_directory"] is not None:
-        imageName = (
-            evo.parameters["output_directory"]
-            + "pareto_"
-            + pair[0]
-            + "_"
-            + pair[1]
-        )
+    if output_directory is not None:
+        imageName = output_directory + "pareto_" + pair[0] + "_" + pair[1]
         if top_percentage != 1.0:
             imageName += "_top" + str(top_percentage)
         plt.savefig(imageName + ".png")
@@ -466,3 +503,13 @@ def pareto_plot(history, pair, top_percentage=1.0):
     plt.clf()
     plt.cla()
     plt.close()
+
+
+def ensure_output_directory(output_directory: str):
+    """Ensures that an output directory has a trailing slash, and that it
+    exists."""
+    if output_directory[-1] != "/":
+        output_directory += "/"
+    if not os.path.isdir(output_directory):
+        os.makedirs(output_directory)
+    return output_directory

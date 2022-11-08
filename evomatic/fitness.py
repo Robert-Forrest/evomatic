@@ -1,14 +1,18 @@
 """Module providing fitness calculation."""
 
 from typing import List
+from numbers import Number
 
 import numpy as np
 import pandas as pd
 
-import evomatic as evo
 
-
-def normalise(data: pd.DataFrame, property_name: str):
+def normalise(
+    data: pd.DataFrame,
+    property_name: str,
+    max_value: Number,
+    min_value: Number,
+):
     """Returns data normalised by subtracting the minimum and dividing
     by the range. The range and minimum are taken from the entire evolutionary
     history.
@@ -22,22 +26,23 @@ def normalise(data: pd.DataFrame, property_name: str):
         The column of data to be normalised.
     property_name
         The label of the data to be normalised.
+    max_value
+        The historical maximum value of the data.
+    min_value
+        The historical miniimum value of the data.
 
     """
 
-    denominator = (
-        evo.parameters["target_normalisation"][property_name]["max"]
-        - evo.parameters["target_normalisation"][property_name]["min"]
-    )
+    denominator = max_value - min_value
     if denominator > 0:
-        return (
-            data - evo.parameters["target_normalisation"][property_name]["min"]
-        ) / denominator
+        return (data - min_value) / denominator
     else:
         return 1
 
 
-def determine_normalisation_factors(alloys: pd.DataFrame):
+def determine_normalisation_factors(
+    alloys: pd.DataFrame, target_normalisation: dict
+):
     """Determine the normalisation factors for each target, to be used when
     normalising alloy fitnesses. The maximum and minimum are taken from alloy
     performance across the entire evolutionary history.
@@ -49,32 +54,24 @@ def determine_normalisation_factors(alloys: pd.DataFrame):
 
     alloys
         The current population of alloy candidates.
+    target_normalisation
+        Dict of normalisation factors for each target.
 
     """
 
-    for target in (
-        evo.parameters["targets"]["maximise"]
-        + evo.parameters["targets"]["minimise"]
-    ):
+    for target in target_normalisation:
         for _, row in alloys.iterrows():
-            if (
-                row[target]
-                > evo.parameters["target_normalisation"][target]["max"]
-            ):
-                evo.parameters["target_normalisation"][target]["max"] = row[
-                    target
-                ]
+            if row[target] > target_normalisation[target]["max"]:
+                target_normalisation[target]["max"] = row[target]
 
-            if (
-                row[target]
-                < evo.parameters["target_normalisation"][target]["min"]
-            ):
-                evo.parameters["target_normalisation"][target]["min"] = row[
-                    target
-                ]
+            if row[target] < target_normalisation[target]["min"]:
+                target_normalisation[target]["min"] = row[target]
+    return target_normalisation
 
 
-def calculate_comparible_fitnesses(alloys: pd.DataFrame) -> pd.DataFrame:
+def calculate_comparible_fitnesses(
+    alloys: pd.DataFrame, targets: dict, target_normalisation: dict
+) -> pd.DataFrame:
     """Returns data with fitness values calculated as a fraction of the best
     values observed across the entire evolutionary history, enabling comparison
     of candidates from different generations. Intended to be used at the end of
@@ -87,47 +84,62 @@ def calculate_comparible_fitnesses(alloys: pd.DataFrame) -> pd.DataFrame:
 
     alloys
         The current population of alloy candidates.
+    targets
+        Dict of targets for maximisation and minimisation.
+    target_normalisation
+        Dict of normalisation factors for each target.
 
     """
 
-    determine_normalisation_factors(alloys)
+    target_normalisation = determine_normalisation_factors(
+        alloys, target_normalisation
+    )
 
     comparible_fitnesses = []
     for _, row in alloys.iterrows():
-        if len(evo.parameters["targets"]["maximise"]) > 0:
+        if len(targets["maximise"]) > 0:
             maximise = 1
-            for target in evo.parameters["targets"]["maximise"]:
-                maximise *= normalise(row[target], target)
+            for target in targets["maximise"]:
+                maximise *= normalise(
+                    row[target],
+                    target,
+                    target_normalisation[target]["max"],
+                    target_normalisation[target]["min"],
+                )
         else:
             maximise = 0
 
-        if len(evo.parameters["targets"]["minimise"]) > 0:
+        if len(targets["minimise"]) > 0:
             minimise = 1
-            for target in evo.parameters["targets"]["minimise"]:
-                minimise *= normalise(row[target], target)
+            for target in targets["minimise"]:
+                minimise *= normalise(
+                    row[target],
+                    target,
+                    target_normalisation[target]["max"],
+                    target_normalisation[target]["min"],
+                )
         else:
             minimise = 0
 
         fitness = 0
-        if (
-            len(evo.parameters["targets"]["maximise"]) > 0
-            and len(evo.parameters["targets"]["minimise"]) > 0
-        ):
+        if len(targets["maximise"]) > 0 and len(targets["minimise"]) > 0:
             fitness = (maximise - minimise + 1) * 0.5
-        elif len(evo.parameters["targets"]["maximise"]) > 0:
+        elif len(targets["maximise"]) > 0:
             fitness = maximise
-        elif len(evo.parameters["targets"]["minimise"]) > 0:
+        elif len(targets["minimise"]) > 0:
             fitness = 1 - minimise
 
         comparible_fitnesses.append(fitness)
 
     alloys["fitness"] = comparible_fitnesses
 
-    alloys = calculate_fitnesses(alloys)
+    alloys = calculate_fitnesses(alloys, targets, target_normalisation)
     return alloys
 
 
-def calculate_crowding(alloys: pd.DataFrame):
+def calculate_crowding(
+    alloys: pd.DataFrame, targets: dict, target_normalisation: dict
+):
     """Calculates the crowding distance, enabling comparison of candidates in
     the same Pareto rank. See Section 2.2 of
     https://doi.org/10.1145/1068009.1068047.
@@ -138,24 +150,35 @@ def calculate_crowding(alloys: pd.DataFrame):
     ----------
 
     alloys
-        The current population of alloy candidates.
+        The current population of alloy candidates
+    targets
+        Dict of targets for maximisation and minimisation.
+    target_normalisation
+        Dict of normalisation factors for each target.
 
     """
 
     tmpAlloys = alloys.copy()
 
     for i, row in tmpAlloys.iterrows():
-        for target in evo.parameters["targets"]["minimise"]:
-            tmpAlloys.at[i, target] = normalise(row[target], target)
-        for target in evo.parameters["targets"]["maximise"]:
-            tmpAlloys.at[i, target] = normalise(row[target], target)
+        for target in targets["minimise"]:
+            tmpAlloys.at[i, target] = normalise(
+                row[target],
+                target,
+                target_normalisation[target]["max"],
+                target_normalisation[target]["min"],
+            )
+        for target in targets["maximise"]:
+            tmpAlloys.at[i, target] = normalise(
+                row[target],
+                target,
+                target_normalisation[target]["max"],
+                target_normalisation[target]["min"],
+            )
 
     distance = [0] * len(alloys)
 
-    for target in (
-        evo.parameters["targets"]["maximise"]
-        + evo.parameters["targets"]["minimise"]
-    ):
+    for target in targets["maximise"] + targets["minimise"]:
         tmpAlloys = tmpAlloys.sort_values(by=[target])
 
         for i in range(1, len(alloys) - 1):
@@ -168,7 +191,9 @@ def calculate_crowding(alloys: pd.DataFrame):
     alloys["crowding"] = distance
 
 
-def calculate_fitnesses(alloys: pd.DataFrame) -> pd.DataFrame:
+def calculate_fitnesses(
+    alloys: pd.DataFrame, targets: dict, target_normalisation: dict
+) -> pd.DataFrame:
     """Assigns Pareto ranks and crowding distances to alloy candidates.
 
     :group: fitness
@@ -178,24 +203,30 @@ def calculate_fitnesses(alloys: pd.DataFrame) -> pd.DataFrame:
 
     alloys
         The current population of alloy candidates.
+    targets
+        Dict of targets for maximisation and minimisation.
+    target_normalisation
+        Dict of normalisation factors for each target.
 
     """
 
-    determine_normalisation_factors(alloys)
+    determine_normalisation_factors(alloys, target_normalisation)
 
     tmpAlloys = alloys.copy()
 
     fronts = []
     while len(tmpAlloys) > 0:
-        pareto_filter = get_pareto_frontier(tmpAlloys)
+        pareto_filter = get_pareto_frontier(
+            tmpAlloys, targets, target_normalisation
+        )
         front = tmpAlloys.loc[pareto_filter]
 
         tmpAlloys = tmpAlloys.drop(front.index)
 
         front["rank"] = len(fronts)
 
-        if len(evo.parameters["target_normalisation"]) > 1:
-            calculate_crowding(front)
+        if len(target_normalisation) > 1:
+            calculate_crowding(front, targets, target_normalisation)
 
         fronts.append(front)
 
@@ -204,7 +235,9 @@ def calculate_fitnesses(alloys: pd.DataFrame) -> pd.DataFrame:
     return alloys
 
 
-def get_pareto_frontier(alloys: pd.DataFrame) -> List[bool]:
+def get_pareto_frontier(
+    alloys: pd.DataFrame, targets: dict, target_normalisation: dict
+) -> List[bool]:
     """Obtains the Pareto frontier of a set of alloys.
 
     :group: fitness
@@ -214,20 +247,36 @@ def get_pareto_frontier(alloys: pd.DataFrame) -> List[bool]:
 
     alloys
         The current population of alloy candidates.
+    targets
+        Dict of targets for maximisation and minimisation.
+    target_normalisation
+        Dict of normalisation factors for each target.
 
     """
 
     costs = []
-    for target in evo.parameters["targets"]["minimise"]:
+    for target in targets["minimise"]:
         cost = []
         for _, row in alloys.iterrows():
-            cost.append(normalise(row[target], target))
+            cost.append(
+                normalise(
+                    row[target],
+                    target,
+                    target_normalisation[target]["max"],
+                    target_normalisation[target]["min"],
+                )
+            )
         costs.append(cost)
 
-    for target in evo.parameters["targets"]["maximise"]:
+    for target in targets["maximise"]:
         cost = []
         for _, row in alloys.iterrows():
-            normalised = normalise(row[target], target)
+            normalised = normalise(
+                row[target],
+                target,
+                target_normalisation[target]["max"],
+                target_normalisation[target]["min"],
+            )
             if normalised != 0.0:
                 cost.append(normalised**-1)
             else:

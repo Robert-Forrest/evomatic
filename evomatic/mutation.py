@@ -8,7 +8,9 @@ import metallurgy as mg
 import evomatic as evo
 
 
-def determine_possible_mutation_types(alloy: mg.Alloy) -> List[str]:
+def determine_possible_mutation_types(
+    alloy: mg.Alloy, constraints: dict
+) -> List[str]:
     """Determines the mutation types that can be applied to an alloy, given the
     constraints on the evolutionary algorithm.
 
@@ -19,6 +21,8 @@ def determine_possible_mutation_types(alloy: mg.Alloy) -> List[str]:
 
     alloy
         The alloy composition being mutated.
+    constraints
+        The constraints on alloy compositions that can be generated.
 
     """
 
@@ -27,16 +31,16 @@ def determine_possible_mutation_types(alloy: mg.Alloy) -> List[str]:
         mutation_types.append("adjust")
         mutation_types.append("swap")
 
-    if alloy.num_elements < evo.parameters["constraints"]["max_elements"]:
+    if alloy.num_elements < constraints["max_elements"]:
         mutation_types.append("add")
 
-    if alloy.num_elements > evo.parameters["constraints"]["min_elements"]:
+    if alloy.num_elements > constraints["min_elements"]:
         mutation_types.append("remove")
 
     return mutation_types
 
 
-def remove_element(alloy: mg.Alloy) -> mg.Alloy:
+def remove_element(alloy: mg.Alloy, constraints: dict) -> mg.Alloy:
     """Mutate an alloy composition by removing an element, taking constraints
     into account.
 
@@ -47,17 +51,16 @@ def remove_element(alloy: mg.Alloy) -> mg.Alloy:
 
     alloy
         The alloy composition being mutated.
+    constraints
+        The constraints on alloy compositions that can be generated.
 
     """
 
     removable_elements = alloy.elements
 
-    for element in evo.parameters["constraints"]["percentages"]:
+    for element in constraints["percentages"]:
         if element in removable_elements:
-            if (
-                evo.parameters["constraints"]["percentages"][element]["min"]
-                > 0
-            ):
+            if constraints["percentages"][element]["min"] > 0:
                 removable_elements.remove(element)
 
     if len(removable_elements) > 0:
@@ -67,7 +70,7 @@ def remove_element(alloy: mg.Alloy) -> mg.Alloy:
     return alloy
 
 
-def add_element(alloy: mg.Alloy) -> mg.Alloy:
+def add_element(alloy: mg.Alloy, constraints: dict) -> mg.Alloy:
     """Mutate an alloy composition by adding an element, taking constraints
     into account.
 
@@ -78,12 +81,14 @@ def add_element(alloy: mg.Alloy) -> mg.Alloy:
 
     alloy
         The alloy composition being mutated.
+    constraints
+        The constraints on alloy compositions that can be generated.
 
     """
 
     possible_additions = [
         element
-        for element in evo.parameters["constraints"]["allowed_elements"]
+        for element in constraints["allowed_elements"]
         if element not in alloy.elements
     ]
 
@@ -151,7 +156,9 @@ def adjust_element(alloy: mg.Alloy) -> mg.Alloy:
     return alloy
 
 
-def mutate(alloys: pd.DataFrame) -> pd.DataFrame:
+def mutate(
+    alloys: pd.DataFrame, mutation_rate: float, constraints: dict
+) -> pd.DataFrame:
     """Applies the mutation operator to the population of alloy candidates,
     generating child alloys.
 
@@ -162,17 +169,23 @@ def mutate(alloys: pd.DataFrame) -> pd.DataFrame:
 
     alloys
         The current population of alloy candidates.
+    mutation_rate
+        The percentage chance that mutation occurs for each candidate.
+    constraints
+        The constraints on alloy compositions that can be generated.
 
     """
 
     mutants = []
     mutant_indices = []
     for _, alloy in alloys.iterrows():
-        if np.random.uniform() < evo.parameters["mutation_rate"]:
+        if np.random.uniform() < mutation_rate:
 
             mutant_alloy = alloy["alloy"]
 
-            mutation_types = determine_possible_mutation_types(mutant_alloy)
+            mutation_types = determine_possible_mutation_types(
+                mutant_alloy, constraints
+            )
 
             if len(mutation_types) == 0:
                 continue
@@ -180,10 +193,10 @@ def mutate(alloys: pd.DataFrame) -> pd.DataFrame:
             mutation_type = np.random.choice(mutation_types, 1)[0]
 
             if mutation_type == "remove":
-                mutant_alloy = remove_element(mutant_alloy)
+                mutant_alloy = remove_element(mutant_alloy, constraints)
 
             elif mutation_type == "add":
-                mutant_alloy = add_element(mutant_alloy)
+                mutant_alloy = add_element(mutant_alloy, constraints)
 
             elif mutation_type == "swap":
                 mutant_alloy = swap_elements(mutant_alloy)
