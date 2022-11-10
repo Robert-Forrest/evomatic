@@ -444,18 +444,19 @@ class Evolver:
                     children, self.targets, self.target_normalisation
                 )
 
-                children = evo.annealing.anneal(
-                    children,
-                    self.temperature,
-                    self.constraints,
-                    self.targets,
-                    self.target_normalisation,
-                )
-                children["generation"] = iteration
+                if self.temperature > 0:
+                    children = evo.annealing.anneal(
+                        children,
+                        self.temperature,
+                        self.constraints,
+                        self.targets,
+                        self.target_normalisation,
+                    )
+                    self.temperature = self.initial_temperature * np.exp(
+                        -0.2 * iteration
+                    )
 
-                self.temperature = self.initial_temperature * np.exp(
-                    -0.2 * iteration
-                )
+                children["generation"] = iteration
 
                 self.alloys = self.alloys.sort_values(
                     by=sort_columns, ascending=sort_directions
