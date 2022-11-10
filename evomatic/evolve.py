@@ -452,8 +452,9 @@ class Evolver:
                     self.target_normalisation,
                 )
                 children["generation"] = iteration
-                self.temperature = self.initial_temperature / np.log(
-                    iteration + 1
+
+                self.temperature = self.initial_temperature * np.exp(
+                    -0.2 * iteration
                 )
 
                 self.alloys = self.alloys.sort_values(
