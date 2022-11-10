@@ -30,8 +30,9 @@ class Evolver:
         tournament_size: Optional[int] = None,
         recombination_rate: float = 0.9,
         mutation_rate: float = 0.05,
+        temperature: float = 100,
         model: Optional = None,
-        verbosity: int = 0,
+        verbosity: int = 1,
     ):
         """Evolver class
 
@@ -70,6 +71,8 @@ class Evolver:
             copying of the parents into the next generation.
         mutation_rate
             The percentage chance that mutation occurs per candidate.
+        temperature
+            The effective temperature applied during simulated annealing.
         model
             Cerebral model to use for on-the-fly predictions.
         verbosity
@@ -101,6 +104,8 @@ class Evolver:
 
         self.recombination_rate = recombination_rate
         self.mutation_rate = mutation_rate
+        self.temperature = temperature
+        self.initial_temperature = temperature
 
         self.model = model
         if self.model is not None:
@@ -381,20 +386,15 @@ class Evolver:
 
         children = evo.mutation.mutate(
             children, self.mutation_rate, self.constraints
-        )
+        ).drop_duplicates(subset="alloy")
 
-        new_generation = children.drop_duplicates(subset="alloy")
+        while len(children) < self.population_size:
+            immigrants = self.immigrate(self.population_size - len(children))
+            children = pd.concat(
+                [children, immigrants], ignore_index=True
+            ).drop_duplicates(subset="alloy")
 
-        while len(new_generation) < self.population_size:
-            immigrants = self.immigrate(
-                self.population_size - len(new_generation)
-            )
-            new_generation = pd.concat(
-                [new_generation, immigrants], ignore_index=True
-            )
-            new_generation = new_generation.drop_duplicates(subset="alloy")
-
-        return new_generation
+        return children
 
     def evolve(self) -> dict:
         """Runs the evolutionary algorithm, generating new candidates until
@@ -408,6 +408,11 @@ class Evolver:
         """
 
         self.alloys = self.immigrate(self.population_size)
+        self.alloys["generation"] = 0
+        self.alloys = evo.fitness.calculate_features(self.alloys, self.targets)
+        self.alloys = evo.fitness.calculate_fitnesses(
+            self.alloys, self.targets, self.target_normalisation
+        )
 
         sort_columns = ["rank"]
         sort_directions = [True]
@@ -421,26 +426,6 @@ class Evolver:
             iteration < self.max_iterations and not converged
         ) or iteration < self.min_iterations:
 
-            for target in self.targets["maximise"] + self.targets["minimise"]:
-                self.alloys[target] = mg.calculate(
-                    self.alloys["alloy"], target
-                )
-
-            self.alloys = self.alloys.dropna(
-                subset=self.targets["maximise"] + self.targets["minimise"]
-            )
-
-            self.alloys["generation"] = iteration
-
-            self.alloys = evo.fitness.calculate_fitnesses(
-                self.alloys, self.targets, self.target_normalisation
-            )
-
-            self.accumulate_history()
-
-            if self.verbosity > 0:
-                self.output_progress()
-
             if (
                 iteration > self.convergence_window
                 and iteration > self.min_iterations
@@ -450,25 +435,50 @@ class Evolver:
                     break
 
             if iteration < self.max_iterations - 1:
+                children = self.make_new_generation()
+
+                children = evo.fitness.calculate_features(
+                    children, self.targets
+                )
+                children = evo.fitness.calculate_fitnesses(
+                    children, self.targets, self.target_normalisation
+                )
+
+                children = evo.annealing.anneal(
+                    children,
+                    self.temperature,
+                    self.constraints,
+                    self.targets,
+                    self.target_normalisation,
+                )
+                children["generation"] = iteration
+                self.temperature = self.initial_temperature / np.log(
+                    iteration + 1
+                )
 
                 self.alloys = self.alloys.sort_values(
                     by=sort_columns, ascending=sort_directions
                 ).head(self.population_size)
 
-                children = self.make_new_generation()
-
                 self.alloys = pd.concat(
                     [self.alloys, children], ignore_index=True
                 ).drop_duplicates(subset="alloy")
+                self.alloys = evo.fitness.calculate_fitnesses(
+                    self.alloys, self.targets, self.target_normalisation
+                )
 
-                while len(self.alloys) < 2 * self.population_size:
-                    immigrants = self.immigrate(
-                        2 * self.population_size - len(self.alloys)
-                    )
-                    self.alloys = pd.concat(
-                        [self.alloys, immigrants], ignore_index=True
-                    )
-                    self.alloys = self.alloys.drop_duplicates(subset="alloy")
+                # while len(self.alloys) < 2 * self.population_size:
+                #     immigrants = self.immigrate(
+                #         2 * self.population_size - len(self.alloys)
+                #     )
+                #     self.alloys = pd.concat(
+                #         [self.alloys, immigrants], ignore_index=True
+                #     ).drop_duplicates(subset="alloy")
+
+            self.accumulate_history()
+
+            if self.verbosity > 0:
+                self.output_progress()
 
             iteration += 1
 
@@ -486,7 +496,7 @@ class Evolver:
 
         """
 
-        stats_string = ""
+        stats_string = "T=" + str(round(self.temperature, 4)) + ", "
         for target in self.targets["minimise"] + self.targets["maximise"]:
             stats_string += (
                 target

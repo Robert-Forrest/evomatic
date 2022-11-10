@@ -7,6 +7,7 @@ from . import competition
 from . import recombination
 from . import mutation
 from . import fitness
+from . import annealing
 from . import plots
 
 __all__ = [
@@ -16,5 +17,6 @@ __all__ = [
     "recombination",
     "mutation",
     "fitness",
+    "annealing",
     "plots",
 ]
