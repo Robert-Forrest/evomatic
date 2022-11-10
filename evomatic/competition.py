@@ -42,8 +42,9 @@ def tournaments(
             winner = evo.fitness.compare_candidates(
                 contestants.iloc[0], contestants.iloc[1]
             )
-            winners.append(winner)
-            tmp_alloys.drop([winner.name])
+            if winner is not None:
+                winners.append(winner)
+                tmp_alloys.drop([winner.name])
 
         else:
             break
