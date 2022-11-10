@@ -381,3 +381,30 @@ def compare_candidates(A: pd.Series, B: pd.Series) -> pd.Series:
             return B
 
     return None
+
+
+def compare_candidates_numerical(A: pd.Series, B: pd.Series) -> float:
+    """Compares two alloy candidates to determine which is fitter, based on
+    Pareto rank and crowding distance, returning a numerical value.
+
+    :group: fitness
+
+    Parameters
+    ----------
+
+    A
+        Candidate A
+
+    B
+        Candidate B
+    """
+
+    if A["rank"] != B["rank"]:
+        # Lower rank is better
+        return B["rank"] - A["rank"]
+    elif "crowding" in A and "crowding" in B:
+        # Larger crowding distance is better
+        if A["crowding"] != np.inf and B["crowding"] != np.inf:
+            return A["crowding"] - B["crowding"]
+
+    return 0
