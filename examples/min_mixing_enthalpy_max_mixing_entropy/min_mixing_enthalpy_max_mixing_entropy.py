@@ -3,8 +3,11 @@ import evomatic as evo
 evolver = evo.Evolver(
     **{
         "population_size": 50,
-        "targets": {"maximise": ["density"], "minimise": ["mass"]},
-        "min_iterations": 50,
+        "targets": {
+            "maximise": ["mixing_entropy"],
+            "minimise": ["mixing_enthalpy"],
+        },
+        "min_iterations": 30,
     }
 )
 
