@@ -3,6 +3,7 @@
 from typing import List
 from numbers import Number
 
+import metallurgy as mg
 import numpy as np
 import pandas as pd
 
@@ -192,7 +193,10 @@ def calculate_crowding(
 
 
 def calculate_fitnesses(
-    alloys: pd.DataFrame, targets: dict, target_normalisation: dict
+    alloys: pd.DataFrame,
+    targets: dict,
+    target_normalisation: dict,
+    adjust_normalisation_factors: bool = True,
 ) -> pd.DataFrame:
     """Assigns Pareto ranks and crowding distances to alloy candidates.
 
@@ -207,32 +211,56 @@ def calculate_fitnesses(
         Dict of targets for maximisation and minimisation.
     target_normalisation
         Dict of normalisation factors for each target.
+    adjust_normalisation_factors
+        If True, the normalisation factors will be updated based on the
+        current population.
 
     """
 
-    determine_normalisation_factors(alloys, target_normalisation)
+    if adjust_normalisation_factors:
+        determine_normalisation_factors(alloys, target_normalisation)
 
-    tmpAlloys = alloys.copy()
+    tmp_alloys = alloys.copy()
 
-    fronts = []
-    while len(tmpAlloys) > 0:
-        pareto_filter = get_pareto_frontier(
-            tmpAlloys, targets, target_normalisation
-        )
-        front = tmpAlloys.loc[pareto_filter]
+    if len(target_normalisation) > 1:
+        fronts = []
+        while len(tmp_alloys) > 0:
+            pareto_filter = get_pareto_frontier(
+                tmp_alloys, targets, target_normalisation
+            )
+            front = tmp_alloys.loc[pareto_filter]
 
-        tmpAlloys = tmpAlloys.drop(front.index)
+            tmp_alloys = tmp_alloys.drop(front.index)
 
-        front["rank"] = len(fronts)
+            front["rank"] = len(fronts)
 
-        if len(target_normalisation) > 1:
             calculate_crowding(front, targets, target_normalisation)
 
-        fronts.append(front)
+            fronts.append(front)
 
-    alloys = pd.concat(fronts)
+        alloys = pd.concat(fronts)
+    else:
+        sort_columns = []
+        sort_directions = []
+        if len(targets["maximise"]) > 0:
+            sort_directions.append(False)
+            sort_columns.append(targets["maximise"][0])
+        else:
+            sort_directions.append(True)
+            sort_columns.append(targets["minimise"][0])
+
+        alloys = alloys.sort_values(
+            by=sort_columns, ascending=sort_directions
+        ).reset_index(drop=True)
+        alloys["rank"] = alloys.index
 
     return alloys
+
+
+def calculate_features(alloys, targets):
+    for target in targets["maximise"] + targets["minimise"]:
+        alloys[target] = mg.calculate(alloys["alloy"], target)
+    return alloys.dropna(subset=targets["maximise"] + targets["minimise"])
 
 
 def get_pareto_frontier(
@@ -277,6 +305,7 @@ def get_pareto_frontier(
                 target_normalisation[target]["max"],
                 target_normalisation[target]["min"],
             )
+
             if normalised != 0.0:
                 cost.append(normalised**-1)
             else:
