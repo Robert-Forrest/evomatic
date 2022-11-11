@@ -31,6 +31,7 @@ class Evolver:
         recombination_rate: float = 0.9,
         mutation_rate: float = 0.05,
         temperature: float = 100,
+        cooling_rate: float = 0.9,
         model: Optional = None,
         verbosity: int = 1,
     ):
@@ -73,6 +74,8 @@ class Evolver:
             The percentage chance that mutation occurs per candidate.
         temperature
             The effective temperature applied during simulated annealing.
+        cooling_rate
+            The rate at which the cooling schedule reduces the annealing temperature.
         model
             Cerebral model to use for on-the-fly predictions.
         verbosity
@@ -452,8 +455,10 @@ class Evolver:
                         self.targets,
                         self.target_normalisation,
                     )
-                    self.temperature = self.initial_temperature * np.exp(
-                        -0.2 * iteration
+
+                    self.temperature = (
+                        self.initial_temperature
+                        * self.cooling_rate**iteration
                     )
 
                 children["generation"] = iteration
