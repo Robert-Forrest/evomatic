@@ -163,6 +163,58 @@ def plot_alloy_percentages(history: dict, output_directory: str = "./"):
     plt.cla()
 
 
+def plot_per_element_targets(history, targets, output_directory="./"):
+
+    target_names = targets["maximise"] + targets["minimise"]
+    unique_elements = mg.analyse.find_unique_elements(
+        history["alloys"]["alloy"]
+    )
+
+    ensure_output_directory(output_directory + "per_element")
+
+    for element in unique_elements:
+        per_element_targets = {target: [] for target in target_names}
+        for i, row in history["alloys"].iterrows():
+            if element in row["alloy"].elements:
+                for target in target_names:
+                    per_element_targets[target].append(
+                        {
+                            "percentage": row["alloy"].composition[element],
+                            "value": row[target],
+                        }
+                    )
+
+        for target in target_names:
+
+            if len(per_element_targets[target]) < 10 or not np.all(
+                per_element_targets[target]
+            ):
+                continue
+
+            plt.scatter(
+                [p["percentage"] for p in per_element_targets[target]],
+                [p["value"] for p in per_element_targets[target]],
+            )
+
+            plt.xlabel(element + " %")
+            plt.ylabel(target)
+
+            plt.grid()
+            if output_directory is not None:
+                plt.savefig(
+                    output_directory
+                    + "per_element/"
+                    + element
+                    + "_"
+                    + target
+                    + ".png"
+                )
+            else:
+                plt.show()
+            plt.clf()
+            plt.cla()
+
+
 def pareto_front_plot(
     history: dict, pair: List[str], output_directory: str = "./"
 ):

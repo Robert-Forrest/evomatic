@@ -555,6 +555,9 @@ class Evolver:
 
         evo.plots.plot_targets(self.history, self.targets, output_directory)
         evo.plots.plot_alloy_percentages(self.history, output_directory)
+        evo.plots.plot_per_element_targets(
+            self.history, self.targets, output_directory
+        )
 
         for pair in itertools.combinations(
             self.targets["minimise"] + self.targets["maximise"],
