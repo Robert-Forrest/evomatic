@@ -257,9 +257,14 @@ def calculate_fitnesses(
     return alloys
 
 
-def calculate_features(alloys, targets):
+def calculate_features(alloys, targets, uncertainty=False):
     for target in targets["maximise"] + targets["minimise"]:
-        alloys[target] = mg.calculate(alloys["alloy"], target)
+        values = mg.calculate(alloys["alloy"], target, uncertainty=uncertainty)
+        if isinstance(values[0], tuple):
+            alloys[target] = [v[0] for v in values]
+            alloys[target + "_uncertainty"] = [v[1] for v in values]
+        else:
+            alloys[target] = values
     return alloys.dropna(subset=targets["maximise"] + targets["minimise"])
 
 

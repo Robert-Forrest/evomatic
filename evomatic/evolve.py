@@ -19,8 +19,8 @@ class Evolver:
     def __init__(
         self,
         targets,
-        population_size: int = 50,
-        max_iterations: int = 100,
+        population_size: int = 100,
+        max_iterations: int = 200,
         min_iterations: int = 10,
         convergence_window: int = 10,
         convergence_tolerance: float = 0.01,
@@ -33,6 +33,7 @@ class Evolver:
         temperature: float = 100,
         cooling_rate: float = 0.9,
         model: Optional = None,
+        model_uncertainty: float = False,
         verbosity: int = 1,
     ):
         """Evolver class
@@ -78,6 +79,9 @@ class Evolver:
             The rate at which the cooling schedule reduces the annealing temperature.
         model
             Cerebral model to use for on-the-fly predictions.
+        model_uncertainty
+            If True, Cerebral model predictions will be returned with
+            uncertainty estimates.
         verbosity
             Determines the amount of output from evomatic (0=none, 1=all)
 
@@ -107,10 +111,13 @@ class Evolver:
 
         self.recombination_rate = recombination_rate
         self.mutation_rate = mutation_rate
+
         self.temperature = temperature
         self.initial_temperature = temperature
+        self.cooling_rate = cooling_rate
 
         self.model = model
+        self.model_uncertainty = model_uncertainty
         if self.model is not None:
             import cerebral as cb
 
@@ -294,10 +301,11 @@ class Evolver:
             converged_target = [False] * (self.convergence_window - 1)
             if len(self.history[target]) > self.convergence_window:
 
-                if target in self.targets["minimise"]:
-                    direction = "min"
-                else:
-                    direction = "max"
+                # if target in self.targets["minimise"]:
+                #     direction = "min"
+                # else:
+                #     direction = "max"
+                direction = "average"
 
                 tolerance = np.abs(
                     self.convergence_tolerance
@@ -412,7 +420,9 @@ class Evolver:
 
         self.alloys = self.immigrate(self.population_size)
         self.alloys["generation"] = 0
-        self.alloys = evo.fitness.calculate_features(self.alloys, self.targets)
+        self.alloys = evo.fitness.calculate_features(
+            self.alloys, self.targets, uncertainty=self.model_uncertainty
+        )
         self.alloys = evo.fitness.calculate_fitnesses(
             self.alloys, self.targets, self.target_normalisation
         )
@@ -441,7 +451,7 @@ class Evolver:
                 children = self.make_new_generation()
 
                 children = evo.fitness.calculate_features(
-                    children, self.targets
+                    children, self.targets, uncertainty=self.model_uncertainty
                 )
                 children = evo.fitness.calculate_fitnesses(
                     children, self.targets, self.target_normalisation
