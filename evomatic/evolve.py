@@ -588,11 +588,13 @@ class Evolver:
         """
 
         with open(output_directory + "genetic.dat", "w") as genetic_file:
-            genetic_file.write(
-                "# rank generation alloy fitness "
-                + " ".join(self.targets["minimise"] + self.targets["maximise"])
-                + "\n"
-            )
+            header_string = "# rank generation alloy fitness"
+            for target in self.targets["minimise"] + self.targets["maximise"]:
+                header_string += " " + target
+                if target + "_uncertainty" in self.history["alloys"]:
+                    header_string += " " + target + "_uncertainty"
+
+            genetic_file.write(header_string + "\n")
 
             i = 0
             for _, row in self.history["alloys"].iterrows():
@@ -601,6 +603,10 @@ class Evolver:
                     self.targets["minimise"] + self.targets["maximise"]
                 ):
                     stats_string += str(round(row[target], 4)) + " "
+                    if target + "_uncertainty" in row:
+                        stats_string += (
+                            str(round(row[target + "_uncertainty"], 4)) + " "
+                        )
 
                 genetic_file.write(
                     str(i)
