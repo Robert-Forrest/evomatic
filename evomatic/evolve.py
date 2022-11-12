@@ -92,7 +92,7 @@ class Evolver:
 
         self.population_size = population_size
         self.max_iterations = max_iterations
-        self.min_iterations = min_iterations
+        self.min_iterations = min([min_iterations, self.max_iterations])
         self.convergence_tolerance = convergence_tolerance
         self.convergence_window = convergence_window
         self.verbosity = verbosity
