@@ -206,6 +206,7 @@ def mutate(
 
             if mutant_alloy is not None:
                 mutant_indices.append(alloy.name)
+                mutant_alloy.rescale()
                 mutants.append({"alloy": mutant_alloy})
 
     for i in range(len(mutant_indices)):
