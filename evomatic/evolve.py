@@ -122,9 +122,12 @@ class Evolver:
         self.model = model
         self.model_uncertainty = model_uncertainty
         if self.model is not None:
-            import cerebral as cb
+            self.model = cb.models.load(self.model)
+            mg.set_model(self.model)
+        else:
+            self.model_uncertainty = False
 
-            mg.set_model(cb.models.load(self.model))
+        self.postprocess = postprocess
 
         self.setup_history()
 
