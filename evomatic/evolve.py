@@ -1,11 +1,12 @@
 """Module providing the basic evolutionary algorithm."""
 
 import itertools
-from typing import Optional
+from typing import Optional, Callable
 
 import pandas as pd
 import numpy as np
 import metallurgy as mg
+import cerebral as cb
 
 import evomatic as evo
 
