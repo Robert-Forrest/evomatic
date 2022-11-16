@@ -35,6 +35,7 @@ class Evolver:
         model: Optional = None,
         model_uncertainty: float = False,
         verbosity: int = 1,
+        postprocess: Optional[Callable] = None,
     ):
         """Evolver class
 
@@ -84,6 +85,8 @@ class Evolver:
             uncertainty estimates.
         verbosity
             Determines the amount of output from evomatic (0=none, 1=all)
+        postprocess
+            A function to call on the final collection of alloys.
 
         """
 
@@ -502,6 +505,9 @@ class Evolver:
         self.history["alloys"] = evo.fitness.calculate_comparible_fitnesses(
             self.history["alloys"], self.targets, self.target_normalisation
         ).sort_values("fitness", ascending=False)
+
+        if self.postprocess is not None:
+            self.history["alloys"] = self.postprocess(self.history["alloys"])
 
         return self.history
 
