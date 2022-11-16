@@ -198,6 +198,7 @@ def plot_per_element_targets(history, targets, output_directory="./"):
 
             plt.xlabel(element + " %")
             plt.ylabel(target)
+            plt.xlim(0, 1)
 
             plt.grid()
             if output_directory is not None:
