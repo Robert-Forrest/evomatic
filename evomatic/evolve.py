@@ -600,6 +600,9 @@ class Evolver:
                 if target + "_uncertainty" in self.history["alloys"]:
                     header_string += " " + target + "_uncertainty"
 
+            if "novelty" in self.history["alloys"]:
+                header_string += " novelty"
+
             genetic_file.write(header_string + "\n")
 
             i = 0
@@ -613,6 +616,9 @@ class Evolver:
                         stats_string += (
                             str(round(row[target + "_uncertainty"], 4)) + " "
                         )
+
+                if "novelty" in self.history["alloys"]:
+                    stats_string += str(row["novelty"])
 
                 genetic_file.write(
                     str(i)
