@@ -280,20 +280,19 @@ class Evolver:
             The number of new alloy compostions to be generated.
         """
 
-        new_alloys = []
+        immigrants = {}
 
-        for _ in range(num_immigrants):
-            immigrant = mg.generate.random_alloy(
-                min_elements=self.constraints["min_elements"],
-                max_elements=self.constraints["max_elements"],
-                percentage_constraints=self.constraints["percentages"],
-                allowed_elements=self.constraints["allowed_elements"],
-                constrain_alloy=True,
-            )
+        immigrants["alloy"] = mg.generate.random_alloys(
+            num_immigrants,
+            min_elements=self.constraints["min_elements"],
+            max_elements=self.constraints["max_elements"],
+            percentage_constraints=self.constraints["percentages"],
+            percentage_step=self.constraints["percentage_step"],
+            allowed_elements=self.constraints["allowed_elements"],
+            constrain_alloys=True,
+        )
 
-            new_alloys.append({"alloy": immigrant})
-
-        return pd.DataFrame(new_alloys)
+        return pd.DataFrame(immigrants)
 
     def check_converged(self) -> bool:
         """Determines if the evolutionary algorithm has converged, based on the
