@@ -47,6 +47,8 @@ def tournaments(
                 tmp_alloys.drop([winner.name])
 
         else:
+            for i, row in tmp_alloys.iterrows():
+                winners.append(row)
             break
 
     return pd.DataFrame(winners)
