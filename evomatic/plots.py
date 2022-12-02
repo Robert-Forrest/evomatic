@@ -34,11 +34,18 @@ def plot_targets(history: dict, targets: dict, output_directory: str = "./"):
     output_directory = ensure_output_directory(output_directory)
 
     for target in targets["minimise"] + targets["maximise"]:
-        for label in ["min", "average", "max"]:
+        for label in ["max", "average", "min"]:
+            if label == "min":
+                pretty_label = "Minimum"
+            elif label == "max":
+                pretty_label = "Maximum"
+            elif label == "average":
+                pretty_label = "Average"
+
             plt.plot(
                 [i + 1 for i in range(len(history[target]))],
                 [x[label] for x in history[target]],
-                label=label,
+                label=pretty_label,
             )
 
         plt.xlabel("Generations")
@@ -431,9 +438,6 @@ def pareto_plot(
                 if bestIndex != -1:
                     labelIndices.append(bestIndex)
 
-                # for _ in range(1, numLabelledPoints-1):-
-                #     labelIndices.append(
-                #     int((i/numLabelledPoints)*len(pareto_frontier)))
     else:
         labelIndices.append(0)
 
@@ -449,7 +453,7 @@ def pareto_plot(
         descriptionStr += (
             alphabetLabels[i]
             + ": "
-            + mg.Alloy(pareto_frontier[index][2]).to_pretty_string()
+            + pareto_frontier[index][2].to_pretty_string()
             + "\n"
         )
 
@@ -474,7 +478,6 @@ def pareto_plot(
         label="Pareto Frontier",
         c="r",
     )
-    # marker='o', markerfacecolor='none', markeredgecolor='r',  markersize=10)
 
     plt.scatter(
         np.array(scatter_data[0])[generation_order],
@@ -490,30 +493,23 @@ def pareto_plot(
 
     axbox = ax.get_position()
 
-    labelBoxPosition = (0.99, 0.01)
-    labelBoxLoc = "lower right"
+    label_box_position = (0.99, 0.01)
+    label_box_loc = "lower right"
     if any([t in targets["minimise"] for t in pair]):
-        labelBoxPosition = (0.99, 0.99)
-        labelBoxLoc = "upper right"
+        label_box_position = (0.99, 0.99)
+        label_box_loc = "upper right"
+        # label_box_position = (0.01, 0.99)
+        # label_box_loc = "upper left"
 
     ob = mpl.offsetbox.AnchoredText(
         descriptionStr,
-        loc=labelBoxLoc,
-        bbox_to_anchor=labelBoxPosition,
+        loc=label_box_loc,
+        bbox_to_anchor=label_box_position,
         bbox_transform=ax.transAxes,
     )
-    # bbox_to_anchor=[axbox.x0+0.1, axbox.y1+0.27],
-    # bbox_to_anchor=[axbox.x0+0.2, axbox.y0+0.01],
-    # bbox_transform=ax.transAxes)
     ob.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
     ob.patch.set_alpha(0.75)
     ax.add_artist(ob)
-
-    # adjust_text(annotations, scatter_data[0].to_numpy(), scatter_data[1].to_numpy(),
-    #            add_objects=[legend, frontier_line[0], ob])
-    # arrowprops=dict(arrowstyle="-|>", color='k',
-    #                alpha=0.5, lw=1.0, mutation_scale=10),
-    # expand_text=(1.05, 2.5), expand_points=(2.5, 2.5), lim=10000, precision=0.00001)
 
     max_x = max(scatter_data[0])
     max_y = max(scatter_data[1])
