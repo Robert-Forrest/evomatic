@@ -5,23 +5,33 @@ import metallurgy as mg
 import evomatic as evo
 
 
-def anneal(alloys, temperature, constraints, targets, target_normalisation):
+def anneal(
+    alloys,
+    temperature,
+    constraints,
+    targets,
+    target_normalisation,
+    model_uncertainty=False,
+):
 
-    random_alloys = []
-    for _ in range(len(alloys)):
-        random_alloys.append(
-            {
-                "alloy": mg.generate.random_alloy(
-                    min_elements=constraints["min_elements"],
-                    max_elements=constraints["max_elements"],
-                    percentage_constraints=constraints["percentages"],
-                    allowed_elements=constraints["allowed_elements"],
-                    constrain_alloy=True,
-                )
-            }
-        )
+    random_alloys = mg.generate.random_alloys(
+        len(alloys),
+        min_elements=constraints["min_elements"],
+        max_elements=constraints["max_elements"],
+        percentage_constraints=constraints["percentages"],
+        percentage_step=constraints["percentage_step"],
+        allowed_elements=constraints["allowed_elements"],
+        constrain_alloys=True,
+    )
+    for i in range(len(random_alloys)):
+        random_alloys[i] = {"alloy": random_alloys[i]}
+
     random_alloys = pd.DataFrame(random_alloys)
-    random_alloys = evo.fitness.calculate_features(random_alloys, targets)
+    random_alloys = evo.fitness.calculate_features(
+        random_alloys,
+        targets,
+        uncertainty=model_uncertainty,
+    )
 
     random_alloys["anneal_source"] = "random"
     alloys["anneal_source"] = "original"
