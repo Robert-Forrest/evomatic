@@ -67,6 +67,7 @@ def determine_normalisation_factors(
 
             if row[target] < target_normalisation[target]["min"]:
                 target_normalisation[target]["min"] = row[target]
+
     return target_normalisation
 
 
@@ -258,13 +259,17 @@ def calculate_fitnesses(
 
 
 def calculate_features(alloys, targets, uncertainty=False):
-    for target in targets["maximise"] + targets["minimise"]:
-        values = mg.calculate(alloys["alloy"], target, uncertainty=uncertainty)
-        if isinstance(values[0], tuple):
-            alloys[target] = [v[0] for v in values]
-            alloys[target + "_uncertainty"] = [v[1] for v in values]
+    target_names = targets["maximise"] + targets["minimise"]
+    values = mg.calculate(
+        alloys["alloy"], target_names, uncertainty=uncertainty
+    )
+
+    for target in target_names:
+        if isinstance(values[target][0], tuple):
+            alloys[target] = [v[0] for v in values[target]]
+            alloys[target + "_uncertainty"] = [v[1] for v in values[target]]
         else:
-            alloys[target] = values
+            alloys[target] = values[target]
     return alloys.dropna(subset=targets["maximise"] + targets["minimise"])
 
 
