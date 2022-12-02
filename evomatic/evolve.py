@@ -156,6 +156,9 @@ class Evolver:
             if "min_elements" not in constraints:
                 constraints["min_elements"] = 1
 
+            if "percentage_step" not in constraints:
+                constraints["percentage_step"] = 0.01
+
             if "allowed_elements" not in constraints:
                 constraints["allowed_elements"] = [
                     e for e in mg.periodic_table.elements
@@ -224,6 +227,7 @@ class Evolver:
                 e for e in mg.periodic_table.elements
             ]
             constraints["percentages"] = {}
+            constraints["percentage_step"] = 0.01
         self.constraints = constraints
 
     def setup_targets(self, targets: dict):
