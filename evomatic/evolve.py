@@ -371,7 +371,7 @@ class Evolver:
 
         total_composition = {}
         for _, row in self.alloys.iterrows():
-            alloy = mg.Alloy(row["alloy"])
+            alloy = row["alloy"]
             for element in alloy.composition:
                 if element not in total_composition:
                     total_composition[element] = 0
@@ -459,7 +459,10 @@ class Evolver:
                     children, self.targets, uncertainty=self.model_uncertainty
                 )
                 children = evo.fitness.calculate_fitnesses(
-                    children, self.targets, self.target_normalisation
+                    children,
+                    self.targets,
+                    self.target_normalisation,
+                    adjust_normalisation_factors=False,
                 )
 
                 if self.temperature > 0:
@@ -469,6 +472,7 @@ class Evolver:
                         self.constraints,
                         self.targets,
                         self.target_normalisation,
+                        self.model_uncertainty,
                     )
 
                     self.temperature = (
@@ -485,22 +489,15 @@ class Evolver:
                 self.alloys = pd.concat(
                     [self.alloys, children], ignore_index=True
                 ).drop_duplicates(subset="alloy")
+
                 self.alloys = evo.fitness.calculate_fitnesses(
                     self.alloys, self.targets, self.target_normalisation
                 )
 
-                # while len(self.alloys) < 2 * self.population_size:
-                #     immigrants = self.immigrate(
-                #         2 * self.population_size - len(self.alloys)
-                #     )
-                #     self.alloys = pd.concat(
-                #         [self.alloys, immigrants], ignore_index=True
-                #     ).drop_duplicates(subset="alloy")
+                self.accumulate_history()
 
-            self.accumulate_history()
-
-            if self.verbosity > 0:
-                self.output_progress()
+                if self.verbosity > 0:
+                    self.output_progress()
 
             iteration += 1
 
@@ -521,16 +518,17 @@ class Evolver:
 
         """
 
-        stats_string = "T=" + str(round(self.temperature, 4)) + ", "
+        stats_string = "T=" + pretty_stat_string(self.temperature) + ", "
         for target in self.targets["minimise"] + self.targets["maximise"]:
+
             stats_string += (
                 target
                 + ": "
-                + str(round(self.history[target][-1]["min"], 4))
+                + pretty_stat_string(self.history[target][-1]["min"])
                 + ":"
-                + str(round(self.history[target][-1]["average"], 4))
+                + pretty_stat_string(self.history[target][-1]["average"])
                 + ":"
-                + str(round(self.history[target][-1]["max"], 4))
+                + pretty_stat_string(self.history[target][-1]["max"])
                 + ", "
             )
         stats_string = stats_string[:-2]
@@ -609,25 +607,26 @@ class Evolver:
 
             i = 0
             for _, row in self.history["alloys"].iterrows():
-                stats_string = str(round(row["fitness"], 4)) + " "
+                stats_string = pretty_stat_string(row["fitness"]) + " "
                 for target in (
                     self.targets["minimise"] + self.targets["maximise"]
                 ):
-                    stats_string += str(round(row[target], 4)) + " "
+                    stats_string += pretty_stat_string(row[target]) + " "
                     if target + "_uncertainty" in row:
                         stats_string += (
-                            str(round(row[target + "_uncertainty"], 4)) + " "
+                            pretty_stat_string(row[target + "_uncertainty"])
+                            + " "
                         )
 
                 if "novelty" in self.history["alloys"]:
-                    stats_string += str(row["novelty"])
+                    stats_string += pretty_stat_string(row["novelty"])
 
                 genetic_file.write(
                     str(i)
                     + " "
                     + str(row["generation"])
                     + " "
-                    + mg.Alloy(row["alloy"]).to_string()
+                    + str(row["alloy"])
                     + " "
                     + stats_string
                     + "\n"
@@ -653,14 +652,14 @@ class Evolver:
 
             i = 0
             for _, row in self.history["alloys"].iterrows():
-                stats_string = str(round(row["fitness"], 4)) + " "
+                stats_string = pretty_stat_string(row["fitness"]) + " "
                 for target in (
                     self.targets["minimise"] + self.targets["maximise"]
                 ):
-                    stats_string += str(round(row[target], 4)) + " "
+                    stats_string += pretty_stat_string(row[target]) + " "
 
                 percentage_string = ""
-                alloy = mg.Alloy(row["alloy"])
+                alloy = row["alloy"]
                 for element in elements:
                     if element in alloy.composition:
                         percentage_string += str(alloy.composition[element])
@@ -680,3 +679,10 @@ class Evolver:
                     + "\n"
                 )
                 i += 1
+
+
+def pretty_stat_string(value):
+    if np.abs(value) < 1000:
+        return str(round(value, 4))
+    else:
+        return "{:.2E}".format(value)
