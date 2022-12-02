@@ -1,11 +1,8 @@
-import copy
 from typing import List
 
 import numpy as np
 import pandas as pd
 import metallurgy as mg
-
-import evomatic as evo
 
 
 def determine_possible_mutation_types(
@@ -120,11 +117,12 @@ def swap_elements(alloy: mg.Alloy) -> mg.Alloy:
         alloy.composition[elements_to_swap[1]],
     ]
 
-    tmp_composition = copy.copy(alloy.composition)
-    tmp_composition[elements_to_swap[0]] = percentages_to_swap[1]
-    tmp_composition[elements_to_swap[1]] = percentages_to_swap[0]
-
-    alloy.composition = tmp_composition
+    alloy.composition.__setitem__(
+        elements_to_swap[0], percentages_to_swap[1], respond_to_change=False
+    )
+    alloy.composition.__setitem__(
+        elements_to_swap[1], percentages_to_swap[0], respond_to_change=False
+    )
 
     return alloy
 
@@ -176,8 +174,6 @@ def mutate(
 
     """
 
-    mutants = []
-    mutant_indices = []
     for _, alloy in alloys.iterrows():
         if np.random.uniform() < mutation_rate:
 
@@ -205,11 +201,6 @@ def mutate(
                 mutant_alloy = adjust_element(mutant_alloy)
 
             if mutant_alloy is not None:
-                mutant_indices.append(alloy.name)
                 mutant_alloy.rescale()
-                mutants.append({"alloy": mutant_alloy})
-
-    for i in range(len(mutant_indices)):
-        alloys.at[int(mutant_indices[i]), "alloy"] = mutants[i]["alloy"]
 
     return alloys
