@@ -307,11 +307,10 @@ class Evolver:
             converged_target = [False] * (self.convergence_window - 1)
             if len(self.history[target]) > self.convergence_window:
 
-                # if target in self.targets["minimise"]:
-                #     direction = "min"
-                # else:
-                #     direction = "max"
-                direction = "average"
+                if target in self.targets["minimise"]:
+                    direction = "min"
+                else:
+                    direction = "max"
 
                 tolerance = np.abs(
                     self.convergence_tolerance
