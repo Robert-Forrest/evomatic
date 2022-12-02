@@ -1,7 +1,7 @@
 """Module providing the basic evolutionary algorithm."""
 
 import itertools
-from typing import Optional, Callable
+from typing import Optional, Callable, List
 
 import pandas as pd
 import numpy as np
@@ -35,6 +35,7 @@ class Evolver:
         cooling_rate: float = 0.9,
         model: Optional = None,
         model_uncertainty: float = False,
+        model_datafiles: Optional[List[str]] = None,
         verbosity: int = 1,
         postprocess: Optional[Callable] = None,
     ):
@@ -84,6 +85,8 @@ class Evolver:
         model_uncertainty
             If True, Cerebral model predictions will be returned with
             uncertainty estimates.
+        model_datafiles
+            A list of file paths to data readable by cerebral to enable novelty calculations.
         verbosity
             Determines the amount of output from evomatic (0=none, 1=all)
         postprocess
@@ -122,6 +125,7 @@ class Evolver:
 
         self.model = model
         self.model_uncertainty = model_uncertainty
+        self.model_datafiles = model_datafiles
         if self.model is not None:
             self.model = cb.models.load(self.model)
             mg.set_model(self.model)
@@ -504,6 +508,11 @@ class Evolver:
         self.history["alloys"] = evo.fitness.calculate_comparible_fitnesses(
             self.history["alloys"], self.targets, self.target_normalisation
         ).sort_values("fitness", ascending=False)
+
+        if self.model and self.model_datafiles:
+            self.history["alloys"]["novelty"] = cb.novelty(
+                self.history["alloys"], self.model, self.model_datafiles
+            )
 
         if self.postprocess is not None:
             self.history["alloys"] = self.postprocess(self.history["alloys"])
