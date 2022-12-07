@@ -111,7 +111,33 @@ def swap_elements(alloy: mg.Alloy) -> mg.Alloy:
 
     """
 
-    elements_to_swap = np.random.choice(alloy.elements, 2, replace=False)
+    swappable_elements = alloy.elements[:]
+    if hasattr(alloy, "constraints"):
+        precedence_groups = {}
+        for element in alloy.constraints["percentages"]:
+            precedence = 0
+            if "precedence" in alloy.constraints["percentages"][element]:
+                precedence = alloy.constraints["percentages"][element][
+                    "precedence"
+                ]
+
+            if precedence not in precedence_groups:
+                precedence_groups[precedence] = []
+            precedence_groups[precedence].append(element)
+
+        swappable_precedence_groups = []
+        for g in precedence_groups:
+            if len(precedence_groups[g]) > 1:
+                swappable_precedence_groups.append(g)
+
+        if len(swappable_precedence_groups) > 0:
+            swappable_elements = precedence_groups[
+                np.random.choice(
+                    swappable_precedence_groups, 1, replace=False
+                )[0]
+            ]
+
+    elements_to_swap = np.random.choice(swappable_elements, 2, replace=False)
     percentages_to_swap = [
         alloy.composition[elements_to_swap[0]],
         alloy.composition[elements_to_swap[1]],
@@ -145,10 +171,28 @@ def adjust_element(alloy: mg.Alloy) -> mg.Alloy:
     highChange = 1 - alloy.composition[element_to_adjust]
     lowChange = alloy.composition[element_to_adjust]
 
+    if hasattr(alloy, "constraints"):
+        if element_to_adjust in alloy.constraints["local_percentages"]:
+            highChange = (
+                alloy.constraints["local_percentages"][element_to_adjust][
+                    "max"
+                ]
+                - alloy.composition[element_to_adjust]
+            )
+
+            lowChange = (
+                alloy.composition[element_to_adjust]
+                - alloy.constraints["local_percentages"][element_to_adjust][
+                    "min"
+                ]
+            )
+
     adjustment = np.random.uniform(low=-lowChange, high=highChange)
 
-    alloy.composition[element_to_adjust] = max(
-        0, alloy.composition[element_to_adjust] + adjustment
+    alloy.composition.__setitem__(
+        element_to_adjust,
+        max(0, min(1, alloy.composition[element_to_adjust] + adjustment)),
+        respond_to_change=False,
     )
 
     return alloy
@@ -196,7 +240,6 @@ def mutate(
 
             elif mutation_type == "swap":
                 mutant_alloy = swap_elements(mutant_alloy)
-
             elif mutation_type == "adjust":
                 mutant_alloy = adjust_element(mutant_alloy)
 
